@@ -19,7 +19,9 @@ export default function RegisterPage() {
     setLoading(true)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    console.log('[v0] SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
+    console.log('[v0] emailRedirectTo:', process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ?? `${window.location.origin}/auth/callback`)
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -29,6 +31,9 @@ export default function RegisterPage() {
         data: { full_name: fullName },
       },
     })
+
+    console.log('[v0] signUp data:', JSON.stringify(data))
+    console.log('[v0] signUp error:', JSON.stringify(error))
 
     if (error) {
       setError(error.message)
