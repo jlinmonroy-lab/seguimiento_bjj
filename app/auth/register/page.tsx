@@ -18,25 +18,25 @@ export default function RegisterPage() {
     setError(null)
     setLoading(true)
 
-    const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo:
-          process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
-          `${window.location.origin}/auth/callback`,
-        data: { full_name: fullName },
-      },
-    })
-
-    if (error) {
-      setError(error.message)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo:
+            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
+            `${window.location.origin}/auth/callback`,
+          data: { full_name: fullName },
+        },
+      })
+      if (error) throw error
+      setDone(true)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al crear la cuenta.')
+    } finally {
       setLoading(false)
-      return
     }
-
-    setDone(true)
   }
 
   if (done) {
@@ -45,10 +45,14 @@ export default function RegisterPage() {
         <div className="text-center space-y-4 max-w-sm">
           <h1 className="text-2xl font-bold text-foreground">Revisa tu correo</h1>
           <p className="text-muted-foreground text-sm">
-            Te enviamos un enlace de confirmación a <span className="text-foreground font-medium">{email}</span>.
+            Te enviamos un enlace de confirmación a{' '}
+            <span className="text-foreground font-medium">{email}</span>.
             Confirma tu cuenta para iniciar sesión.
           </p>
-          <Link href="/auth/login" className="inline-block text-sm font-medium underline underline-offset-4 text-foreground">
+          <Link
+            href="/auth/login"
+            className="inline-block text-sm font-medium underline underline-offset-4 text-foreground"
+          >
             Volver al inicio de sesión
           </Link>
         </div>
