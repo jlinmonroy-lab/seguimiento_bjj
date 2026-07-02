@@ -1,13 +1,16 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { registerUser } from './actions'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 
 export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const router = useRouter()
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -15,13 +18,29 @@ export default function RegisterPage() {
     setLoading(true)
 
     const formData = new FormData(e.currentTarget)
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+
+    // Step 1: Server Action creates user via Admin API (email_confirm: true, no email sent)
     const result = await registerUser(formData)
 
-    // If we get here, redirect didn't happen — there was an error
     if (result?.error) {
       setError(result.error)
+      setLoading(false)
+      return
     }
-    setLoading(false)
+
+    // Step 2: Sign in from the browser so the session cookie is set via @supabase/ssr
+    const supabase = createClient()
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (signInError) {
+      setError(signInError.message)
+      setLoading(false)
+      return
+    }
+
+    router.push('/dashboard')
   }
 
   return (

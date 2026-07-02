@@ -1,9 +1,6 @@
 'use server'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
 
 export async function registerUser(formData: FormData) {
   const email = formData.get('email') as string
@@ -14,9 +11,10 @@ export async function registerUser(formData: FormData) {
     return { error: 'Correo y contraseña son obligatorios.' }
   }
 
-  // Step 1: Create the user as already confirmed via Admin API
+  // Create the user as already confirmed via Admin API — no email sent, no rate limit
+  console.log('[v0] registerUser action called for:', email)
   const admin = createAdminClient()
-  const { data: adminData, error: adminError } = await admin.auth.admin.createUser({
+  const { error: adminError } = await admin.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
@@ -27,16 +25,6 @@ export async function registerUser(formData: FormData) {
     return { error: adminError.message }
   }
 
-  // Step 2: Sign them in immediately so a session cookie is set
-  const supabase = await createClient()
-  const { error: signInError } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
-
-  if (signInError) {
-    return { error: signInError.message }
-  }
-
-  redirect('/dashboard')
+  // Return success — the browser will sign in to get a real session cookie
+  return { success: true }
 }
