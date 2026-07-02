@@ -12,7 +12,6 @@ export async function registerUser(formData: FormData) {
   }
 
   // Create the user as already confirmed via Admin API — no email sent, no rate limit
-  console.log('[v0] registerUser action called for:', email)
   const admin = createAdminClient()
   const { error: adminError } = await admin.auth.admin.createUser({
     email,
