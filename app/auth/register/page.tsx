@@ -1,59 +1,46 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { registerUser } from './actions'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 
 export default function RegisterPage() {
-  const [fullName, setFullName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [done, setDone] = useState(false)
+  const router = useRouter()
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
     setLoading(true)
 
-    const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo:
-          process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
-          `${window.location.origin}/auth/callback`,
-        data: { full_name: fullName },
-      },
-    })
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
 
-    if (error) {
-      setError(error.message)
+    // Step 1: Server Action creates user via Admin API (email_confirm: true, no email sent)
+    const result = await registerUser(formData)
+
+    if (result?.error) {
+      setError(result.error)
       setLoading(false)
       return
     }
 
-    setDone(true)
-  }
+    // Step 2: Sign in from the browser so the session cookie is set via @supabase/ssr
+    const supabase = createClient()
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
 
-  if (done) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="text-center space-y-4 max-w-sm">
-          <h1 className="text-2xl font-bold text-foreground">Revisa tu correo</h1>
-          <p className="text-muted-foreground text-sm">
-            Te enviamos un enlace de confirmación a <span className="text-foreground font-medium">{email}</span>.
-            Confirma tu cuenta para iniciar sesión.
-          </p>
-          <Link href="/auth/login" className="inline-block text-sm font-medium underline underline-offset-4 text-foreground">
-            Volver al inicio de sesión
-          </Link>
-        </div>
-      </main>
-    )
+    if (signInError) {
+      setError(signInError.message)
+      setLoading(false)
+      return
+    }
+
+    router.push('/dashboard')
   }
 
   return (
@@ -66,16 +53,15 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="name" className="block text-sm font-medium text-foreground">
+            <label htmlFor="full_name" className="block text-sm font-medium text-foreground">
               Nombre completo
             </label>
             <input
-              id="name"
+              id="full_name"
+              name="full_name"
               type="text"
               autoComplete="name"
               required
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="Tu nombre"
             />
@@ -87,11 +73,10 @@ export default function RegisterPage() {
             </label>
             <input
               id="email"
+              name="email"
               type="email"
               autoComplete="email"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="tu@email.com"
             />
@@ -103,12 +88,11 @@ export default function RegisterPage() {
             </label>
             <input
               id="password"
+              name="password"
               type="password"
               autoComplete="new-password"
               required
               minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="••••••••"
             />
