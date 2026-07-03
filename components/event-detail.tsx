@@ -198,17 +198,22 @@ export function EventDetail({ event, profile, attendanceList, myAttendance, user
         <ul className="space-y-2">
           {confirmed.map((a) => {
             const p = a.profiles
+            const profileHref = a.student_id === userId
+              ? '/dashboard/profile'
+              : `/dashboard/students/${a.student_id}`
             return (
               <li key={a.id} className="flex items-center gap-3">
-                <UserAvatar name={p?.full_name ?? null} avatarUrl={p?.avatar_url ?? null} size="sm" />
-                <div className="flex-1 min-w-0">
-                  <span className="text-sm text-foreground font-medium truncate block">
-                    {p?.full_name ?? 'Alumno'}
-                  </span>
-                  {p && (
-                    <BeltBadge color={p.belt_color} stripes={p.belt_stripes} className="mt-0.5" />
-                  )}
-                </div>
+                <Link href={profileHref} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                  <UserAvatar name={p?.full_name ?? null} avatarUrl={p?.avatar_url ?? null} size="sm" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm text-foreground font-medium truncate block">
+                      {p?.full_name ?? 'Alumno'}
+                    </span>
+                    {p && (
+                      <BeltBadge color={p.belt_color} stripes={p.belt_stripes} className="mt-0.5" />
+                    )}
+                  </div>
+                </Link>
 
                 {/* Admin verification */}
                 {isAdmin && (
@@ -239,16 +244,7 @@ export function EventDetail({ event, profile, attendanceList, myAttendance, user
                     >
                       <X size={13} />
                     </button>
-                    {isAdmin && a.student_id !== userId && (
-                      <Link
-                        href={`/dashboard/students/${a.student_id}`}
-                        className="rounded-full p-1.5 bg-secondary text-secondary-foreground hover:bg-accent transition-colors"
-                        title="Ver perfil"
-                      >
-                        <span className="sr-only">Ver perfil</span>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-                      </Link>
-                    )}
+
                   </div>
                 )}
               </li>
