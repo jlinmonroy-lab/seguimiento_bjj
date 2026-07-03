@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { BottomNav } from '@/components/bottom-nav'
 import { LogoutButton } from '@/components/logout-button'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export default async function DashboardLayout({
   children,
@@ -17,7 +18,10 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <LogoutButton />
+      <div className="fixed top-3 right-3 z-50 flex items-center gap-2">
+        <ThemeToggle />
+        <LogoutButton />
+      </div>
       <main className="flex-1 pb-20">
         {children}
       </main>

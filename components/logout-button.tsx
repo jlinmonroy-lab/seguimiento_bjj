@@ -22,7 +22,7 @@ export function LogoutButton() {
     <button
       onClick={handleSignOut}
       disabled={isPending}
-      className="fixed top-3 right-3 z-50 flex items-center gap-1.5 rounded-full border border-border bg-background/80 px-3 py-1.5 text-sm text-muted-foreground shadow-sm backdrop-blur transition-colors hover:text-foreground disabled:opacity-60"
+      className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground shadow-sm transition-colors hover:text-foreground disabled:opacity-60"
       aria-label="Cerrar sesión"
     >
       <LogOut size={16} />
