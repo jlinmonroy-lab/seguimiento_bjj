@@ -79,11 +79,16 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
               <div className="flex items-baseline gap-2 mb-2">
                 <span
                   className={cn(
-                    'text-sm font-semibold capitalize',
+                    'text-sm font-semibold',
                     isToday ? 'text-foreground' : 'text-muted-foreground',
                   )}
                 >
-                  {isToday ? 'Hoy' : formatDate(dateObj.toISOString())}
+                  {isToday
+                    ? 'Hoy'
+                    : (() => {
+                        const s = formatDate(dateObj.toISOString())
+                        return s.charAt(0).toUpperCase() + s.slice(1)
+                      })()}
                 </span>
                 {isToday && (
                   <span className="h-1.5 w-1.5 rounded-full bg-foreground inline-block" />
