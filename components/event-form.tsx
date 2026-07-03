@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, BookmarkCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createClient } from '@/lib/supabase/client'
@@ -16,7 +16,6 @@ interface EventFormProps {
 }
 
 function toDatetimeLocal(iso: string) {
-  // Convert ISO to local datetime-local value
   const d = new Date(iso)
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
@@ -36,9 +35,41 @@ export function EventForm({ userId, event }: EventFormProps) {
   const [startTime, setStartTime] = useState(event ? toDatetimeLocal(event.start_time) : '')
   const [endTime, setEndTime] = useState(event ? toDatetimeLocal(event.end_time) : '')
 
+  const [savingDefault, setSavingDefault] = useState<'description' | 'location' | null>(null)
+  const [savedDefault, setSavedDefault] = useState<'description' | 'location' | null>(null)
+
+  // Load defaults from app_settings only when creating a new event
+  useEffect(() => {
+    if (isEdit) return
+    const supabase = createClient()
+    supabase
+      .from('app_settings')
+      .select('key, value')
+      .in('key', ['default_description', 'default_location'])
+      .then(({ data }) => {
+        if (!data) return
+        for (const row of data) {
+          if (row.key === 'default_description' && row.value) setDescription(row.value)
+          if (row.key === 'default_location' && row.value) setLocation(row.value)
+        }
+      })
+  }, [isEdit])
+
+  async function saveDefault(field: 'description' | 'location') {
+    setSavingDefault(field)
+    const supabase = createClient()
+    const key = field === 'description' ? 'default_description' : 'default_location'
+    const value = field === 'description' ? description : location
+    await supabase
+      .from('app_settings')
+      .upsert({ key, value }, { onConflict: 'key' })
+    setSavingDefault(null)
+    setSavedDefault(field)
+    setTimeout(() => setSavedDefault(null), 2000)
+  }
+
   function handleStartChange(value: string) {
     setStartTime(value)
-    // If end is already set and is now earlier than the new start, push it forward
     if (endTime && value && new Date(endTime) <= new Date(value)) {
       setEndTime(value)
     }
@@ -178,9 +209,25 @@ export function EventForm({ userId, event }: EventFormProps) {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground" htmlFor="location">
-            Ubicación <span className="text-muted-foreground font-normal">(opcional)</span>
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-foreground" htmlFor="location">
+              Ubicación <span className="text-muted-foreground font-normal">(opcional)</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => saveDefault('location')}
+              disabled={savingDefault === 'location'}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              title="Guardar como ubicación predeterminada"
+            >
+              <BookmarkCheck size={13} />
+              {savedDefault === 'location'
+                ? 'Guardado'
+                : savingDefault === 'location'
+                ? 'Guardando...'
+                : 'Predeterminar'}
+            </button>
+          </div>
           <input
             id="location"
             value={location}
@@ -191,9 +238,25 @@ export function EventForm({ userId, event }: EventFormProps) {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground" htmlFor="desc">
-            Descripción <span className="text-muted-foreground font-normal">(opcional)</span>
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-foreground" htmlFor="desc">
+              Descripción <span className="text-muted-foreground font-normal">(opcional)</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => saveDefault('description')}
+              disabled={savingDefault === 'description'}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              title="Guardar como descripción predeterminada"
+            >
+              <BookmarkCheck size={13} />
+              {savedDefault === 'description'
+                ? 'Guardado'
+                : savingDefault === 'description'
+                ? 'Guardando...'
+                : 'Predeterminar'}
+            </button>
+          </div>
           <textarea
             id="desc"
             rows={3}
