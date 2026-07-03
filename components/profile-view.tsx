@@ -20,7 +20,7 @@ interface ProfileViewProps {
   isAdmin: boolean
 }
 
-const BELT_OPTIONS: BeltColor[] = ['white', 'blue', 'purple', 'brown', 'black']
+const BELT_OPTIONS: BeltColor[] = ['white', 'blue', 'purple', 'brown', 'black', 'coral']
 
 export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileViewProps) {
   const router = useRouter()
