@@ -21,12 +21,23 @@ interface CalendarViewProps {
   myAttendance: Attendance[]
 }
 
+// Use a UTC-based date key so server and client produce the same string
+function utcDateKey(iso: string) {
+  const d = new Date(iso)
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
+}
+
+function todayUtcKey() {
+  const d = new Date()
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
+}
+
 function groupByDate(items: CalendarItem[]) {
   const map = new Map<string, CalendarItem[]>()
   for (const item of items) {
-    const date = new Date(item.start_time).toDateString()
-    if (!map.has(date)) map.set(date, [])
-    map.get(date)!.push(item)
+    const key = utcDateKey(item.start_time)
+    if (!map.has(key)) map.set(key, [])
+    map.get(key)!.push(item)
   }
   return map
 }
@@ -72,7 +83,7 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
         {sortedDates.map((dateKey) => {
           const dayItems = grouped.get(dateKey)!
           const dateObj = new Date(dateKey)
-          const isToday = new Date().toDateString() === dateKey
+          const isToday = todayUtcKey() === dateKey
 
           return (
             <div key={dateKey}>

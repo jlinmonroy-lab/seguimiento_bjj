@@ -56,6 +56,7 @@ export function formatDate(iso: string) {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
+    timeZone: 'UTC',
   })
 }
 
@@ -63,6 +64,7 @@ export function formatDateShort(iso: string) {
   return new Date(iso).toLocaleDateString('es-ES', {
     day: 'numeric',
     month: 'short',
+    timeZone: 'UTC',
   })
 }
 
@@ -72,6 +74,7 @@ export function formatDateFull(iso: string) {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
+    timeZone: 'UTC',
   })
 }
 
