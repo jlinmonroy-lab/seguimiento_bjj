@@ -1,11 +1,11 @@
 import type { BeltColor } from '@/lib/supabase/types'
 
 export const BELT_LABELS: Record<BeltColor, string> = {
-  white: 'Blanca',
+  white: 'Blanco',
   blue: 'Azul',
-  purple: 'Morada',
+  purple: 'Morado',
   brown: 'Marrón',
-  black: 'Negra',
+  black: 'Negro',
 }
 
 // Returns a Tailwind bg color class for each belt
