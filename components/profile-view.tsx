@@ -25,6 +25,7 @@ const BELT_OPTIONS: BeltColor[] = ['white', 'blue', 'purple', 'brown', 'black', 
 export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileViewProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [isUploading, setIsUploading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -40,31 +41,45 @@ export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileV
     const file = e.target.files?.[0]
     if (!file) return
     setError(null)
+    setIsUploading(true)
 
-    startTransition(async () => {
+    try {
       const supabase = createClient()
+      // Always overwrite as avatar.ext so old files are replaced
       const ext = file.name.split('.').pop()
       const path = `${profile.id}/avatar.${ext}`
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(path, file, { upsert: true })
+        .upload(path, file, { upsert: true, cacheControl: '3600' })
 
-      if (uploadError) { setError('Error al subir la imagen'); return }
+      if (uploadError) {
+        setError(`Error al subir la imagen: ${uploadError.message}`)
+        return
+      }
 
+      // Get public URL — works now that bucket is public
       const { data } = supabase.storage.from('avatars').getPublicUrl(path)
-      const url = data.publicUrl + `?t=${Date.now()}`
+      // Append cache-buster so the browser doesn't show the old image
+      const url = `${data.publicUrl}?t=${Date.now()}`
 
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: url })
         .eq('id', profile.id)
 
-      if (updateError) { setError('Error al actualizar avatar'); return }
+      if (updateError) {
+        setError(`Error al actualizar avatar: ${updateError.message}`)
+        return
+      }
 
       setAvatarUrl(url)
       router.refresh()
-    })
+    } finally {
+      setIsUploading(false)
+      // Reset input so the same file can be re-selected if needed
+      if (fileRef.current) fileRef.current.value = ''
+    }
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -127,9 +142,9 @@ export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileV
           {isOwnProfile && (
             <button
               onClick={() => fileRef.current?.click()}
-              disabled={isPending}
-              className="absolute -bottom-1 -right-1 rounded-full bg-foreground p-1.5 text-background shadow-sm hover:opacity-90 transition-opacity"
-              aria-label="Cambiar foto"
+              disabled={isPending || isUploading}
+              className="absolute -bottom-1 -right-1 rounded-full bg-foreground p-1.5 text-background shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+              aria-label={isUploading ? 'Subiendo foto...' : 'Cambiar foto'}
             >
               <Camera size={12} />
             </button>
