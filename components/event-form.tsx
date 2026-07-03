@@ -36,6 +36,14 @@ export function EventForm({ userId, event }: EventFormProps) {
   const [startTime, setStartTime] = useState(event ? toDatetimeLocal(event.start_time) : '')
   const [endTime, setEndTime] = useState(event ? toDatetimeLocal(event.end_time) : '')
 
+  function handleStartChange(value: string) {
+    setStartTime(value)
+    // If end is already set and is now earlier than the new start, push it forward
+    if (endTime && value && new Date(endTime) <= new Date(value)) {
+      setEndTime(value)
+    }
+  }
+
   async function handleDelete() {
     if (!event) return
     if (!confirm('¿Eliminar este evento? Esta acción no se puede deshacer.')) return
@@ -149,7 +157,7 @@ export function EventForm({ userId, event }: EventFormProps) {
             type="datetime-local"
             required
             value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
+            onChange={(e) => handleStartChange(e.target.value)}
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
@@ -163,6 +171,7 @@ export function EventForm({ userId, event }: EventFormProps) {
             type="datetime-local"
             required
             value={endTime}
+            min={startTime || undefined}
             onChange={(e) => setEndTime(e.target.value)}
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
