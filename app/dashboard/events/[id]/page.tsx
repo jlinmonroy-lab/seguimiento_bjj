@@ -15,7 +15,7 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
     supabase.from('profiles').select('*').eq('id', user.id).single(),
     supabase
       .from('attendance')
-      .select('*, profiles(id, full_name, avatar_url, belt_color, belt_stripes)')
+      .select('*, profiles!student_id(id, full_name, avatar_url, belt_color, belt_stripes)')
       .eq('calendar_item_id', id),
   ])
 
