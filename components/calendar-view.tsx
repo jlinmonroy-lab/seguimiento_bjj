@@ -46,8 +46,10 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
   const isAdmin = profile?.role === 'admin'
   const attendanceMap = new Map(myAttendance.map((a) => [a.calendar_item_id, a]))
 
+  // Use useState so `now` is only computed on the client, avoiding SSR/client mismatch
+  const [now] = useState(() => new Date())
+
   // Split into upcoming and past
-  const now = new Date()
   const upcoming = items.filter((i) => new Date(i.end_time) >= now)
   const past = items.filter((i) => new Date(i.end_time) < now)
 
