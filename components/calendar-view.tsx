@@ -21,12 +21,23 @@ interface CalendarViewProps {
   myAttendance: Attendance[]
 }
 
+// Use a UTC-based date key so server and client produce the same string
+function utcDateKey(iso: string) {
+  const d = new Date(iso)
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
+}
+
+function todayUtcKey() {
+  const d = new Date()
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
+}
+
 function groupByDate(items: CalendarItem[]) {
   const map = new Map<string, CalendarItem[]>()
   for (const item of items) {
-    const date = new Date(item.start_time).toDateString()
-    if (!map.has(date)) map.set(date, [])
-    map.get(date)!.push(item)
+    const key = utcDateKey(item.start_time)
+    if (!map.has(key)) map.set(key, [])
+    map.get(key)!.push(item)
   }
   return map
 }
@@ -35,8 +46,10 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
   const isAdmin = profile?.role === 'admin'
   const attendanceMap = new Map(myAttendance.map((a) => [a.calendar_item_id, a]))
 
+  // Use useState so `now` is only computed on the client, avoiding SSR/client mismatch
+  const [now] = useState(() => new Date())
+
   // Split into upcoming and past
-  const now = new Date()
   const upcoming = items.filter((i) => new Date(i.end_time) >= now)
   const past = items.filter((i) => new Date(i.end_time) < now)
 
@@ -72,18 +85,23 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
         {sortedDates.map((dateKey) => {
           const dayItems = grouped.get(dateKey)!
           const dateObj = new Date(dateKey)
-          const isToday = new Date().toDateString() === dateKey
+          const isToday = todayUtcKey() === dateKey
 
           return (
             <div key={dateKey}>
               <div className="flex items-baseline gap-2 mb-2">
                 <span
                   className={cn(
-                    'text-sm font-semibold capitalize',
+                    'text-sm font-semibold',
                     isToday ? 'text-foreground' : 'text-muted-foreground',
                   )}
                 >
-                  {isToday ? 'Hoy' : formatDate(dateObj.toISOString())}
+                  {isToday
+                    ? 'Hoy'
+                    : (() => {
+                        const s = formatDate(dateObj.toISOString())
+                        return s.charAt(0).toUpperCase() + s.slice(1)
+                      })()}
                 </span>
                 {isToday && (
                   <span className="h-1.5 w-1.5 rounded-full bg-foreground inline-block" />

@@ -1,4 +1,4 @@
-export type BeltColor = 'white' | 'blue' | 'purple' | 'brown' | 'black'
+export type BeltColor = 'white' | 'blue' | 'purple' | 'brown' | 'black' | 'coral'
 export type UserRole = 'admin' | 'student'
 export type CalendarItemType = 'class' | 'graduation' | 'seminar' | 'competition'
 export type AttendanceStatus = 'confirmed' | 'cancelled' | 'attended' | 'absent'

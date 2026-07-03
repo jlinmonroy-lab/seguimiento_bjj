@@ -14,15 +14,18 @@ export default async function StudentProfilePage({ params }: { params: Promise<{
     supabase.from('profiles').select('*').eq('id', id).single(),
   ])
 
-  if (myProfile?.role !== 'admin') redirect('/dashboard')
   if (!studentProfile) notFound()
 
+  const isAdmin = myProfile?.role === 'admin'
+
+  // Students can view other members' profiles in read-only mode
+  // but cannot edit them — only admins can edit other profiles
   return (
     <ProfileView
       profile={studentProfile as Profile}
       userId={user.id}
       isOwnProfile={false}
-      isAdmin={true}
+      isAdmin={isAdmin}
     />
   )
 }

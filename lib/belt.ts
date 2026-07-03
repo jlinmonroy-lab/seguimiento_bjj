@@ -1,11 +1,12 @@
 import type { BeltColor } from '@/lib/supabase/types'
 
 export const BELT_LABELS: Record<BeltColor, string> = {
-  white: 'Blanca',
+  white: 'Blanco',
   blue: 'Azul',
-  purple: 'Morada',
+  purple: 'Morado',
   brown: 'Marrón',
-  black: 'Negra',
+  black: 'Negro',
+  coral: 'Coral',
 }
 
 // Returns a Tailwind bg color class for each belt
@@ -15,6 +16,7 @@ export const BELT_BG: Record<BeltColor, string> = {
   purple: 'bg-purple-600',
   brown: 'bg-amber-800',
   black: 'bg-neutral-900 dark:bg-neutral-950 border border-border',
+  coral: 'bg-red-400',
 }
 
 export const BELT_TEXT: Record<BeltColor, string> = {
@@ -23,6 +25,7 @@ export const BELT_TEXT: Record<BeltColor, string> = {
   purple: 'text-white',
   brown: 'text-white',
   black: 'text-white',
+  coral: 'text-white',
 }
 
 export const EVENT_TYPE_LABELS: Record<string, string> = {
@@ -44,6 +47,7 @@ export function formatTime(iso: string) {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
+    timeZone: 'UTC',
   })
 }
 
@@ -52,6 +56,7 @@ export function formatDate(iso: string) {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
+    timeZone: 'UTC',
   })
 }
 
@@ -59,6 +64,7 @@ export function formatDateShort(iso: string) {
   return new Date(iso).toLocaleDateString('es-ES', {
     day: 'numeric',
     month: 'short',
+    timeZone: 'UTC',
   })
 }
 
@@ -68,6 +74,7 @@ export function formatDateFull(iso: string) {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
+    timeZone: 'UTC',
   })
 }
 

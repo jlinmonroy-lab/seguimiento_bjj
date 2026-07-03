@@ -2,7 +2,7 @@
 
 import { useState, useRef, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Camera, LogOut } from 'lucide-react'
+import { ArrowLeft, Camera } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -20,11 +20,12 @@ interface ProfileViewProps {
   isAdmin: boolean
 }
 
-const BELT_OPTIONS: BeltColor[] = ['white', 'blue', 'purple', 'brown', 'black']
+const BELT_OPTIONS: BeltColor[] = ['white', 'blue', 'purple', 'brown', 'black', 'coral']
 
 export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileViewProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [isUploading, setIsUploading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -40,31 +41,45 @@ export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileV
     const file = e.target.files?.[0]
     if (!file) return
     setError(null)
+    setIsUploading(true)
 
-    startTransition(async () => {
+    try {
       const supabase = createClient()
+      // Always overwrite as avatar.ext so old files are replaced
       const ext = file.name.split('.').pop()
       const path = `${profile.id}/avatar.${ext}`
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(path, file, { upsert: true })
+        .upload(path, file, { upsert: true, cacheControl: '3600' })
 
-      if (uploadError) { setError('Error al subir la imagen'); return }
+      if (uploadError) {
+        setError(`Error al subir la imagen: ${uploadError.message}`)
+        return
+      }
 
+      // Get public URL — works now that bucket is public
       const { data } = supabase.storage.from('avatars').getPublicUrl(path)
-      const url = data.publicUrl + `?t=${Date.now()}`
+      // Append cache-buster so the browser doesn't show the old image
+      const url = `${data.publicUrl}?t=${Date.now()}`
 
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ avatar_url: url })
         .eq('id', profile.id)
 
-      if (updateError) { setError('Error al actualizar avatar'); return }
+      if (updateError) {
+        setError(`Error al actualizar avatar: ${updateError.message}`)
+        return
+      }
 
       setAvatarUrl(url)
       router.refresh()
-    })
+    } finally {
+      setIsUploading(false)
+      // Reset input so the same file can be re-selected if needed
+      if (fileRef.current) fileRef.current.value = ''
+    }
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -100,12 +115,6 @@ export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileV
     })
   }
 
-  async function handleSignOut() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/auth/login')
-  }
-
   const displayName = profile?.full_name ?? 'Sin nombre'
 
   return (
@@ -124,16 +133,6 @@ export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileV
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
           {isOwnProfile ? 'Mi perfil' : displayName}
         </h1>
-        {isOwnProfile && (
-          <button
-            onClick={handleSignOut}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Cerrar sesión"
-          >
-            <LogOut size={16} />
-            <span className="hidden sm:inline">Salir</span>
-          </button>
-        )}
       </div>
 
       {/* Avatar */}
@@ -143,9 +142,9 @@ export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileV
           {isOwnProfile && (
             <button
               onClick={() => fileRef.current?.click()}
-              disabled={isPending}
-              className="absolute -bottom-1 -right-1 rounded-full bg-foreground p-1.5 text-background shadow-sm hover:opacity-90 transition-opacity"
-              aria-label="Cambiar foto"
+              disabled={isPending || isUploading}
+              className="absolute -bottom-1 -right-1 rounded-full bg-foreground p-1.5 text-background shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+              aria-label={isUploading ? 'Subiendo foto...' : 'Cambiar foto'}
             >
               <Camera size={12} />
             </button>
@@ -217,11 +216,14 @@ export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileV
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {[0, 1, 2, 3, 4].map((n) => (
-                  <SelectItem key={n} value={String(n)}>
-                    {n === 0 ? 'Sin grados' : `${n} grado${n !== 1 ? 's' : ''}`}
-                  </SelectItem>
-                ))}
+                {Array.from(
+                  { length: (beltColor === 'black' || beltColor === 'coral' ? 10 : 4) + 1 },
+                  (_, n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n === 0 ? 'Sin grados' : `${n} grado${n !== 1 ? 's' : ''}`}
+                    </SelectItem>
+                  )
+                )}
               </SelectContent>
             </Select>
           </div>
