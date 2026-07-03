@@ -110,7 +110,7 @@ export function EventDetail({ event, profile, attendanceList, myAttendance, user
         <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <Clock size={14} />
-            <span className="capitalize">{formatDateFull(event.start_time)}</span>
+            <span>{formatDateFull(event.start_time).replace(/^\w/, (c) => c.toUpperCase())}</span>
           </div>
           <div className="flex items-center gap-2">
             <Clock size={14} className="opacity-0" aria-hidden />
