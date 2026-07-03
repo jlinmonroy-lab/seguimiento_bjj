@@ -201,11 +201,14 @@ export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileV
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {[0, 1, 2, 3, 4].map((n) => (
-                  <SelectItem key={n} value={String(n)}>
-                    {n === 0 ? 'Sin grados' : `${n} grado${n !== 1 ? 's' : ''}`}
-                  </SelectItem>
-                ))}
+                {Array.from(
+                  { length: (beltColor === 'black' || beltColor === 'coral' ? 10 : 4) + 1 },
+                  (_, n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n === 0 ? 'Sin grados' : `${n} grado${n !== 1 ? 's' : ''}`}
+                    </SelectItem>
+                  )
+                )}
               </SelectContent>
             </Select>
           </div>
