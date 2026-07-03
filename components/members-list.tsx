@@ -26,7 +26,6 @@ export function MembersList({ profiles, currentUserId, isAdmin }: MembersListPro
       <ul className="space-y-2">
         {sorted.map((member) => {
           const isOwn = member.id === currentUserId
-          const canView = isOwn || isAdmin
           const href = isOwn
             ? '/dashboard/profile'
             : `/dashboard/students/${member.id}`
@@ -60,13 +59,9 @@ export function MembersList({ profiles, currentUserId, isAdmin }: MembersListPro
 
           return (
             <li key={member.id}>
-              {canView ? (
-                <Link href={href} className="block">
-                  {inner}
-                </Link>
-              ) : (
-                inner
-              )}
+              <Link href={href} className="block">
+                {inner}
+              </Link>
             </li>
           )
         })}
