@@ -6,6 +6,7 @@ export const BELT_LABELS: Record<BeltColor, string> = {
   purple: 'Morado',
   brown: 'Marrón',
   black: 'Negro',
+  coral: 'Coral',
 }
 
 // Returns a Tailwind bg color class for each belt
@@ -15,6 +16,7 @@ export const BELT_BG: Record<BeltColor, string> = {
   purple: 'bg-purple-600',
   brown: 'bg-amber-800',
   black: 'bg-neutral-900 dark:bg-neutral-950 border border-border',
+  coral: 'bg-red-400',
 }
 
 export const BELT_TEXT: Record<BeltColor, string> = {
@@ -23,6 +25,7 @@ export const BELT_TEXT: Record<BeltColor, string> = {
   purple: 'text-white',
   brown: 'text-white',
   black: 'text-white',
+  coral: 'text-white',
 }
 
 export const EVENT_TYPE_LABELS: Record<string, string> = {
