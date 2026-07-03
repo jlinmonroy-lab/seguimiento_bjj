@@ -34,7 +34,7 @@ export function MembersList({ profiles, currentUserId, isAdmin }: MembersListPro
           const inner = (
             <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:bg-accent/40">
               <UserAvatar
-                src={member.avatar_url}
+                avatarUrl={member.avatar_url}
                 name={member.full_name}
                 className="h-11 w-11 shrink-0"
               />
