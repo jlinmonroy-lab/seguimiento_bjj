@@ -2,7 +2,7 @@
 
 import { useState, useRef, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Camera, LogOut } from 'lucide-react'
+import { ArrowLeft, Camera } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -100,12 +100,6 @@ export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileV
     })
   }
 
-  async function handleSignOut() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/auth/login')
-  }
-
   const displayName = profile?.full_name ?? 'Sin nombre'
 
   return (
@@ -124,16 +118,6 @@ export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileV
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
           {isOwnProfile ? 'Mi perfil' : displayName}
         </h1>
-        {isOwnProfile && (
-          <button
-            onClick={handleSignOut}
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Cerrar sesión"
-          >
-            <LogOut size={16} />
-            <span className="hidden sm:inline">Salir</span>
-          </button>
-        )}
       </div>
 
       {/* Avatar */}
