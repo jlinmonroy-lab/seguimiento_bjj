@@ -35,8 +35,8 @@ export function EventForm({ userId, event }: EventFormProps) {
   const [startTime, setStartTime] = useState(event ? toDatetimeLocal(event.start_time) : '')
   const [endTime, setEndTime] = useState(event ? toDatetimeLocal(event.end_time) : '')
 
-  const [savingDefault, setSavingDefault] = useState<'description' | 'location' | null>(null)
-  const [savedDefault, setSavedDefault] = useState<'description' | 'location' | null>(null)
+  const [savingDefault, setSavingDefault] = useState<'title' | 'description' | 'location' | null>(null)
+  const [savedDefault, setSavedDefault] = useState<'title' | 'description' | 'location' | null>(null)
 
   // Load defaults from app_settings only when creating a new event
   useEffect(() => {
@@ -45,24 +45,25 @@ export function EventForm({ userId, event }: EventFormProps) {
     supabase
       .from('app_settings')
       .select('key, value')
-      .in('key', ['default_description', 'default_location'])
+      .in('key', ['default_title', 'default_description', 'default_location'])
       .then(({ data }) => {
         if (!data) return
         for (const row of data) {
+          if (row.key === 'default_title' && row.value) setTitle(row.value)
           if (row.key === 'default_description' && row.value) setDescription(row.value)
           if (row.key === 'default_location' && row.value) setLocation(row.value)
         }
       })
   }, [isEdit])
 
-  async function saveDefault(field: 'description' | 'location') {
+  async function saveDefault(field: 'title' | 'description' | 'location') {
     setSavingDefault(field)
     const supabase = createClient()
-    const key = field === 'description' ? 'default_description' : 'default_location'
-    const value = field === 'description' ? description : location
+    const keyMap = { title: 'default_title', description: 'default_description', location: 'default_location' }
+    const valueMap = { title, description, location }
     await supabase
       .from('app_settings')
-      .upsert({ key, value }, { onConflict: 'key' })
+      .upsert({ key: keyMap[field], value: valueMap[field] }, { onConflict: 'key' })
     setSavingDefault(null)
     setSavedDefault(field)
     setTimeout(() => setSavedDefault(null), 2000)
@@ -150,9 +151,25 @@ export function EventForm({ userId, event }: EventFormProps) {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground" htmlFor="title">
-            Título
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-foreground" htmlFor="title">
+              Título
+            </label>
+            <button
+              type="button"
+              onClick={() => saveDefault('title')}
+              disabled={savingDefault === 'title'}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              title="Guardar como título predeterminado"
+            >
+              <BookmarkCheck size={13} />
+              {savedDefault === 'title'
+                ? 'Guardado'
+                : savingDefault === 'title'
+                ? 'Guardando...'
+                : 'Predeterminar'}
+            </button>
+          </div>
           <input
             id="title"
             required
