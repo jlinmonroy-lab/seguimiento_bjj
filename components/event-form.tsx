@@ -15,10 +15,29 @@ interface EventFormProps {
   event?: CalendarItem
 }
 
-function toDatetimeLocal(iso: string) {
+const pad = (n: number) => String(n).padStart(2, '0')
+
+// "YYYY-MM-DD" from an ISO string (local time)
+function toDateInput(iso: string) {
   const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+// "HH:MM" from an ISO string (local time)
+function toTimeInput(iso: string) {
+  const d = new Date(iso)
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+// Today's date as "YYYY-MM-DD"
+function todayDate() {
+  const d = new Date()
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+// Combine "YYYY-MM-DD" + "HH:MM" into a Date
+function combine(date: string, time: string) {
+  return new Date(`${date}T${time}`)
 }
 
 export function EventForm({ userId, event }: EventFormProps) {
@@ -32,23 +51,13 @@ export function EventForm({ userId, event }: EventFormProps) {
   const [type, setType] = useState<CalendarItemType>(event?.type ?? 'class')
   const [description, setDescription] = useState(event?.description ?? '')
   const [location, setLocation] = useState(event?.location ?? '')
-  const [startTime, setStartTime] = useState(event ? toDatetimeLocal(event.start_time) : '')
-  const [endTime, setEndTime] = useState(event ? toDatetimeLocal(event.end_time) : '')
+  // Date (day) is shared for start and end; times are configured separately
+  const [eventDate, setEventDate] = useState(event ? toDateInput(event.start_time) : todayDate())
+  const [startTime, setStartTime] = useState(event ? toTimeInput(event.start_time) : '')
+  const [endTime, setEndTime] = useState(event ? toTimeInput(event.end_time) : '')
 
   const [savingDefault, setSavingDefault] = useState<'title' | 'description' | 'location' | 'startTime' | 'endTime' | null>(null)
   const [savedDefault, setSavedDefault] = useState<'title' | 'description' | 'location' | 'startTime' | 'endTime' | null>(null)
-
-  // Returns "YYYY-MM-DDTHH:MM" for today at a given HH:MM string
-  function todayAt(hhmm: string) {
-    const pad = (n: number) => String(n).padStart(2, '0')
-    const d = new Date()
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${hhmm}`
-  }
-
-  // Returns "HH:MM" from a datetime-local string "YYYY-MM-DDTHH:MM"
-  function extractTime(datetimeLocal: string) {
-    return datetimeLocal.slice(11, 16) // "HH:MM"
-  }
 
   // Load defaults from app_settings only when creating a new event
   useEffect(() => {
@@ -64,8 +73,8 @@ export function EventForm({ userId, event }: EventFormProps) {
           if (row.key === 'default_title' && row.value) setTitle(row.value)
           if (row.key === 'default_description' && row.value) setDescription(row.value)
           if (row.key === 'default_location' && row.value) setLocation(row.value)
-          if (row.key === 'default_start_time' && row.value) setStartTime(todayAt(row.value))
-          if (row.key === 'default_end_time' && row.value) setEndTime(todayAt(row.value))
+          if (row.key === 'default_start_time' && row.value) setStartTime(row.value)
+          if (row.key === 'default_end_time' && row.value) setEndTime(row.value)
         }
       })
   }, [isEdit])
@@ -80,13 +89,13 @@ export function EventForm({ userId, event }: EventFormProps) {
       startTime: 'default_start_time',
       endTime: 'default_end_time',
     }
-    // For times, only save the HH:MM part so it applies to any future date
+    // Times are already stored as "HH:MM" so they apply to any future date
     const valueMap = {
       title,
       description,
       location,
-      startTime: extractTime(startTime),
-      endTime: extractTime(endTime),
+      startTime,
+      endTime,
     }
     await supabase
       .from('app_settings')
@@ -98,7 +107,8 @@ export function EventForm({ userId, event }: EventFormProps) {
 
   function handleStartChange(value: string) {
     setStartTime(value)
-    if (endTime && value && new Date(endTime) <= new Date(value)) {
+    // If end time is now before/equal to start time, bump it to match
+    if (endTime && value && endTime <= value) {
       setEndTime(value)
     }
   }
@@ -119,11 +129,13 @@ export function EventForm({ userId, event }: EventFormProps) {
     e.preventDefault()
     setError(null)
 
-    if (!startTime || !endTime) {
-      setError('Completa las fechas de inicio y fin.')
+    if (!eventDate || !startTime || !endTime) {
+      setError('Completa la fecha, la hora de inicio y la de fin.')
       return
     }
-    if (new Date(startTime) >= new Date(endTime)) {
+    const startDateTime = combine(eventDate, startTime)
+    const endDateTime = combine(eventDate, endTime)
+    if (startDateTime >= endDateTime) {
       setError('La hora de inicio debe ser anterior a la de fin.')
       return
     }
@@ -135,8 +147,8 @@ export function EventForm({ userId, event }: EventFormProps) {
         type,
         description: description || null,
         location: location || null,
-        start_time: new Date(startTime).toISOString(),
-        end_time: new Date(endTime).toISOString(),
+        start_time: startDateTime.toISOString(),
+        end_time: endDateTime.toISOString(),
         created_by: userId,
         is_recurring: false,
         recurrence_rule: null,
@@ -224,64 +236,80 @@ export function EventForm({ userId, event }: EventFormProps) {
         </div>
 
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-foreground" htmlFor="start">
-              Inicio
-            </label>
-            <button
-              type="button"
-              onClick={() => saveDefault('startTime')}
-              disabled={savingDefault === 'startTime' || !startTime}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-              title="Guardar hora de inicio como predeterminada"
-            >
-              <BookmarkCheck size={13} />
-              {savedDefault === 'startTime'
-                ? 'Guardado'
-                : savingDefault === 'startTime'
-                ? 'Guardando...'
-                : 'Predeterminar'}
-            </button>
-          </div>
+          <label className="text-sm font-medium text-foreground" htmlFor="date">
+            Fecha
+          </label>
           <input
-            id="start"
-            type="datetime-local"
+            id="date"
+            type="date"
             required
-            value={startTime}
-            onChange={(e) => handleStartChange(e.target.value)}
+            value={eventDate}
+            onChange={(e) => setEventDate(e.target.value)}
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
 
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-foreground" htmlFor="end">
-              Fin
-            </label>
-            <button
-              type="button"
-              onClick={() => saveDefault('endTime')}
-              disabled={savingDefault === 'endTime' || !endTime}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-              title="Guardar hora de fin como predeterminada"
-            >
-              <BookmarkCheck size={13} />
-              {savedDefault === 'endTime'
-                ? 'Guardado'
-                : savingDefault === 'endTime'
-                ? 'Guardando...'
-                : 'Predeterminar'}
-            </button>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-foreground" htmlFor="start">
+                Hora inicio
+              </label>
+              <button
+                type="button"
+                onClick={() => saveDefault('startTime')}
+                disabled={savingDefault === 'startTime' || !startTime}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                title="Guardar hora de inicio como predeterminada"
+              >
+                <BookmarkCheck size={13} />
+                {savedDefault === 'startTime'
+                  ? 'Guardado'
+                  : savingDefault === 'startTime'
+                  ? 'Guardando...'
+                  : 'Predeterminar'}
+              </button>
+            </div>
+            <input
+              id="start"
+              type="time"
+              required
+              value={startTime}
+              onChange={(e) => handleStartChange(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
           </div>
-          <input
-            id="end"
-            type="datetime-local"
-            required
-            value={endTime}
-            min={startTime || undefined}
-            onChange={(e) => setEndTime(e.target.value)}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-foreground" htmlFor="end">
+                Hora fin
+              </label>
+              <button
+                type="button"
+                onClick={() => saveDefault('endTime')}
+                disabled={savingDefault === 'endTime' || !endTime}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                title="Guardar hora de fin como predeterminada"
+              >
+                <BookmarkCheck size={13} />
+                {savedDefault === 'endTime'
+                  ? 'Guardado'
+                  : savingDefault === 'endTime'
+                  ? 'Guardando...'
+                  : 'Predeterminar'}
+              </button>
+            </div>
+            <input
+              id="end"
+              type="time"
+              required
+              value={endTime}
+              min={startTime || undefined}
+              onChange={(e) => setEndTime(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
         </div>
 
         <div className="space-y-1.5">
