@@ -59,7 +59,8 @@ export function EventForm({ userId, event }: EventFormProps) {
   const [savingDefault, setSavingDefault] = useState<'title' | 'description' | 'location' | 'startTime' | 'endTime' | null>(null)
   const [savedDefault, setSavedDefault] = useState<'title' | 'description' | 'location' | 'startTime' | 'endTime' | null>(null)
 
-  // Load defaults from app_settings only when creating a new event
+  // Load default field values from app_settings only when creating a new event.
+  // Default times are stored as "HH:MM" and applied directly to the time inputs.
   useEffect(() => {
     if (isEdit) return
     const supabase = createClient()
