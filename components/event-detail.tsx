@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, MapPin, Clock, Check, X } from 'lucide-react'
+import { MapPin, Clock, Check, X } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -91,15 +91,6 @@ export function EventDetail({ event, profile, attendanceList, myAttendance, user
 
   return (
     <div className="max-w-lg mx-auto px-4 pt-4 pb-6">
-      {/* Back */}
-      <Link
-        href="/dashboard"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-5 transition-colors"
-      >
-        <ArrowLeft size={16} />
-        Calendario
-      </Link>
-
       {/* Header */}
       <div className="space-y-2 mb-6">
         <Badge className={cn('border-0 text-xs', EVENT_TYPE_COLORS[event.type])}>
