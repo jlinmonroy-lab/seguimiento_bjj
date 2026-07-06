@@ -68,7 +68,6 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
         {isAdmin && (
           <Button asChild size="sm" variant="outline">
             <Link href="/dashboard/events/new">
-              <Plus size={16} className="mr-1" />
               Nueva clase
             </Link>
           </Button>
