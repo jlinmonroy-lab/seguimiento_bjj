@@ -139,16 +139,16 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
         </div>
 
         {/* Day-of-week headers */}
-        <div className="grid grid-cols-7 mb-1">
+        <div className="grid grid-cols-7 mb-2">
           {DAYS_ES.map(d => (
-            <div key={d} className="text-center text-xs font-medium text-muted-foreground py-1">
+            <div key={d} className="text-center text-xs font-semibold text-muted-foreground py-1 tracking-wide">
               {d}
             </div>
           ))}
         </div>
 
         {/* Day cells */}
-        <div className="grid grid-cols-7 gap-y-1">
+        <div className="grid grid-cols-7 gap-1">
           {/* Leading blanks */}
           {Array.from({ length: startOffset }).map((_, i) => (
             <div key={`blank-${i}`} />
@@ -171,7 +171,7 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
                 onClick={() => hasEvents ? handleDayClick(key) : undefined}
                 disabled={!hasEvents}
                 className={cn(
-                  'flex flex-col items-center justify-start pt-1 pb-1.5 rounded-xl transition-colors',
+                  'flex flex-col items-center justify-center min-h-12 rounded-xl transition-colors py-2',
                   hasEvents && 'cursor-pointer hover:bg-accent',
                   !hasEvents && 'cursor-default',
                   isSelected && 'bg-foreground text-background hover:bg-foreground',
@@ -180,19 +180,19 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
                 aria-label={`${day} de ${MONTHS_ES[viewMonth]}`}
               >
                 <span className={cn(
-                  'text-sm leading-none font-medium',
+                  'text-base leading-none font-medium',
                   isSelected ? 'text-background' : isToday ? 'text-foreground font-bold' : 'text-foreground',
                   !hasEvents && 'text-muted-foreground font-normal',
                 )}>
                   {day}
                 </span>
                 {/* Event dots */}
-                <div className="flex gap-0.5 mt-1 h-1.5">
+                <div className="flex gap-0.5 mt-1.5 h-2">
                   {typeDots.map(type => (
                     <span
                       key={type}
                       className={cn(
-                        'h-1.5 w-1.5 rounded-full',
+                        'h-2 w-2 rounded-full',
                         isSelected ? 'bg-background' : dotColor(type),
                       )}
                     />
