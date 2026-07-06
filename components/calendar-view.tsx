@@ -88,15 +88,16 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
     setSelectedKey(prev => prev === key ? null : key)
   }
 
-  // Events to show in the list below
-  const listItems: CalendarItem[] = selectedKey
+  // Events to show in the list below — always exclude past events
+  const listItems: CalendarItem[] = (selectedKey
     ? (grouped.get(selectedKey) ?? [])
-    : items
-        .filter(i => {
-          const d = new Date(i.start_time)
-          return d.getUTCFullYear() === viewYear && d.getUTCMonth() === viewMonth
-        })
-        .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+    : items.filter(i => {
+        const d = new Date(i.start_time)
+        return d.getUTCFullYear() === viewYear && d.getUTCMonth() === viewMonth
+      })
+  )
+    .filter(i => new Date(i.end_time) >= now)
+    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
 
   // Group list items by day for display
   const listGrouped = groupByDate(listItems)
@@ -253,16 +254,11 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
                     const confirmed = attendance?.status === 'confirmed'
                     const cancelled = attendance?.status === 'cancelled'
                     const attended = attendance?.status === 'attended'
-                    const isPast = new Date(item.end_time) < now
-
                     return (
                       <Link
                         key={item.id}
                         href={`/dashboard/events/${item.id}`}
-                        className={cn(
-                          'flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent',
-                          isPast && 'opacity-60',
-                        )}
+                        className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent"
                       >
                         {/* Color accent bar */}
                         <span className={cn('w-1 self-stretch rounded-full shrink-0', accentBar(item.type))} />
