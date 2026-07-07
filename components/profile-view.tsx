@@ -22,6 +22,19 @@ interface ProfileViewProps {
 
 const BELT_OPTIONS: BeltColor[] = ['white', 'blue', 'purple', 'brown', 'black', 'coral']
 
+const CATEGORY_OPTIONS = [
+  { value: 'infantil', label: 'Infantil (4–15 años)' },
+  { value: 'juvenil', label: 'Juvenil (16–17 años)' },
+  { value: 'adulto', label: 'Adulto (18–29 años)' },
+  { value: 'master_1', label: 'Máster 1 (30–35 años)' },
+  { value: 'master_2', label: 'Máster 2 (36–40 años)' },
+  { value: 'master_3', label: 'Máster 3 (41–45 años)' },
+  { value: 'master_4', label: 'Máster 4 (46–50 años)' },
+  { value: 'master_5', label: 'Máster 5 (51–55 años)' },
+  { value: 'master_6', label: 'Máster 6 (56–60 años)' },
+  { value: 'master_7', label: 'Máster 7 (61+ años)' },
+]
+
 export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileViewProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -36,6 +49,8 @@ export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileV
   const [beltStripes, setBeltStripes] = useState(profile?.belt_stripes ?? 0)
   const [adminNotes, setAdminNotes] = useState(profile?.admin_notes ?? '')
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? null)
+  const [weight, setWeight] = useState<string>(profile?.weight != null ? String(profile.weight) : '')
+  const [category, setCategory] = useState<string>(profile?.category ?? '')
 
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -93,6 +108,8 @@ export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileV
         full_name: fullName,
         belt_color: beltColor,
         belt_stripes: beltStripes,
+        weight: weight !== '' ? parseFloat(weight) : null,
+        category: category !== '' ? category : null,
       }
 
       // Admin can save notes on any profile
@@ -224,6 +241,46 @@ export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileV
                     </SelectItem>
                   )
                 )}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-foreground" htmlFor="weight">
+              Peso (kg)
+            </label>
+            <input
+              id="weight"
+              type="number"
+              min="0"
+              max="300"
+              step="0.1"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              disabled={!isOwnProfile && !isAdmin}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
+              placeholder="ej. 73.5"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-foreground">Categoría</label>
+            <Select
+              value={category}
+              onValueChange={setCategory}
+              disabled={!isOwnProfile && !isAdmin}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Seleccionar" />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORY_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

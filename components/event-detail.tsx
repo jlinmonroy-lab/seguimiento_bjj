@@ -115,6 +115,13 @@ export function EventDetail({ event, profile, attendanceList, myAttendance, user
               <span>{event.location}</span>
             </div>
           )}
+          {event.gi_nogi && (
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center rounded-full border border-border px-2.5 py-0.5 text-xs font-medium text-foreground">
+                {event.gi_nogi === 'gi' ? 'Gi' : event.gi_nogi === 'nogi' ? 'NoGi' : 'Gi & NoGi'}
+              </span>
+            </div>
+          )}
         </div>
 
         {event.description && (
