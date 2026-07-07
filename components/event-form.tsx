@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { createClient } from '@/lib/supabase/client'
 import type { CalendarItem, CalendarItemType } from '@/lib/supabase/types'
 import { EVENT_TYPE_LABELS } from '@/lib/belt'
+import { cn } from '@/lib/utils'
 
 interface EventFormProps {
   userId: string
@@ -56,6 +57,7 @@ export function EventForm({ userId, event, initialDate }: EventFormProps) {
   const [eventDate, setEventDate] = useState(event ? toDateInput(event.start_time) : (initialDate ?? todayDate()))
   const [startTime, setStartTime] = useState(event ? toTimeInput(event.start_time) : '')
   const [endTime, setEndTime] = useState(event ? toTimeInput(event.end_time) : '')
+  const [giNogi, setGiNogi] = useState<'gi' | 'nogi' | 'both' | ''>(event?.gi_nogi ?? '')
 
   const [savingDefault, setSavingDefault] = useState<'title' | 'description' | 'location' | 'startTime' | 'endTime' | null>(null)
   const [savedDefault, setSavedDefault] = useState<'title' | 'description' | 'location' | 'startTime' | 'endTime' | null>(null)
@@ -154,6 +156,7 @@ export function EventForm({ userId, event, initialDate }: EventFormProps) {
         created_by: userId,
         is_recurring: false,
         recurrence_rule: null,
+        gi_nogi: giNogi !== '' ? giNogi : null,
       }
 
       if (isEdit) {
@@ -235,6 +238,29 @@ export function EventForm({ userId, event, initialDate }: EventFormProps) {
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-foreground">
+            Gi / NoGi <span className="text-muted-foreground font-normal">(opcional)</span>
+          </label>
+          <div className="flex gap-2">
+            {(['gi', 'nogi', 'both'] as const).map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => setGiNogi(prev => prev === opt ? '' : opt)}
+                className={cn(
+                  'flex-1 rounded-md border py-2 text-sm font-medium transition-colors',
+                  giNogi === opt
+                    ? 'border-foreground bg-foreground text-background'
+                    : 'border-border bg-background text-foreground hover:bg-accent',
+                )}
+              >
+                {opt === 'gi' ? 'Gi' : opt === 'nogi' ? 'NoGi' : 'Ambos'}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="space-y-1.5">

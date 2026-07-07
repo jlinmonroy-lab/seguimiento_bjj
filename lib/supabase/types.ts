@@ -28,6 +28,7 @@ export interface CalendarItem {
   recurrence_rule: string | null
   created_by: string | null
   created_at: string
+  gi_nogi: 'gi' | 'nogi' | 'both' | null
 }
 
 export interface Attendance {
