@@ -13,6 +13,7 @@ import { EVENT_TYPE_LABELS } from '@/lib/belt'
 interface EventFormProps {
   userId: string
   event?: CalendarItem
+  initialDate?: string // "YYYY-MM-DD" pre-filled from calendar day click
 }
 
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -40,7 +41,7 @@ function combine(date: string, time: string) {
   return new Date(`${date}T${time}`)
 }
 
-export function EventForm({ userId, event }: EventFormProps) {
+export function EventForm({ userId, event, initialDate }: EventFormProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -52,7 +53,7 @@ export function EventForm({ userId, event }: EventFormProps) {
   const [description, setDescription] = useState(event?.description ?? '')
   const [location, setLocation] = useState(event?.location ?? '')
   // Date (day) is shared for start and end; times are configured separately
-  const [eventDate, setEventDate] = useState(event ? toDateInput(event.start_time) : todayDate())
+  const [eventDate, setEventDate] = useState(event ? toDateInput(event.start_time) : (initialDate ?? todayDate()))
   const [startTime, setStartTime] = useState(event ? toTimeInput(event.start_time) : '')
   const [endTime, setEndTime] = useState(event ? toTimeInput(event.end_time) : '')
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -54,6 +55,7 @@ function groupByDate(items: CalendarItem[]) {
 
 export function CalendarView({ profile, items, myAttendance }: CalendarViewProps) {
   const isAdmin = profile?.role === 'admin'
+  const router = useRouter()
   const attendanceMap = new Map(myAttendance.map((a) => [a.calendar_item_id, a]))
   const [now] = useState(() => new Date())
 
@@ -84,8 +86,14 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
     setSelectedKey(null)
   }
 
-  function handleDayClick(key: string) {
-    setSelectedKey(prev => prev === key ? null : key)
+  function handleDayClick(key: string, hasEvents: boolean) {
+    if (hasEvents) {
+      // Toggle day filter
+      setSelectedKey(prev => prev === key ? null : key)
+    } else if (isAdmin) {
+      // No events on this day — navigate to new event with date pre-filled
+      router.push(`/dashboard/events/new?date=${key}`)
+    }
   }
 
   // Events to show in the list below — always exclude past events
@@ -165,24 +173,32 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
             // Collect up to 3 distinct event type dots
             const typeDots = [...new Set(dayItems.map(e => e.type))].slice(0, 3)
 
+            // Admins can click any day; non-admins can only click days with events
+            const isClickable = hasEvents || isAdmin
+
             return (
               <button
                 key={key}
-                onClick={() => hasEvents ? handleDayClick(key) : undefined}
-                disabled={!hasEvents}
+                onClick={() => isClickable ? handleDayClick(key, hasEvents) : undefined}
+                disabled={!isClickable}
                 className={cn(
                   'flex flex-col items-center justify-center min-h-12 rounded-xl transition-colors py-2',
-                  hasEvents && 'cursor-pointer hover:bg-accent',
-                  !hasEvents && 'cursor-default',
+                  isClickable && 'cursor-pointer hover:bg-accent',
+                  !isClickable && 'cursor-default',
                   isSelected && 'bg-foreground text-background hover:bg-foreground',
                   isToday && !isSelected && 'bg-accent',
                 )}
-                aria-label={`${day} de ${MONTHS_ES[viewMonth]}`}
+                aria-label={
+                  !hasEvents && isAdmin
+                    ? `Crear evento el ${day} de ${MONTHS_ES[viewMonth]}`
+                    : `${day} de ${MONTHS_ES[viewMonth]}`
+                }
               >
                 <span className={cn(
                   'text-base leading-none font-medium',
                   isSelected ? 'text-background' : isToday ? 'text-foreground font-bold' : 'text-foreground',
-                  !hasEvents && 'text-muted-foreground font-normal',
+                  !hasEvents && !isAdmin && 'text-muted-foreground font-normal',
+                  !hasEvents && isAdmin && 'text-foreground/60 font-normal',
                 )}>
                   {day}
                 </span>
