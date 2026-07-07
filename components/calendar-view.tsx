@@ -27,26 +27,28 @@ const MONTHS_ES = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ]
 
-// UTC-based date key "YYYY-MM-DD"
-function utcKey(iso: string) {
+const pad2 = (n: number) => String(n).padStart(2, '0')
+
+// Local-time date key "YYYY-MM-DD" — matches how the form saves dates
+function localKey(iso: string) {
   const d = new Date(iso)
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
 }
 
 function todayKey() {
   const d = new Date()
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
 }
 
-// Day-of-week adjusted so Monday = 0
+// Day-of-week (local time) adjusted so Monday = 0
 function dayIndex(date: Date) {
-  return (date.getUTCDay() + 6) % 7
+  return (date.getDay() + 6) % 7
 }
 
 function groupByDate(items: CalendarItem[]) {
   const map = new Map<string, CalendarItem[]>()
   for (const item of items) {
-    const key = utcKey(item.start_time)
+    const key = localKey(item.start_time)
     if (!map.has(key)) map.set(key, [])
     map.get(key)!.push(item)
   }
@@ -59,18 +61,18 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
   const attendanceMap = new Map(myAttendance.map((a) => [a.calendar_item_id, a]))
   const [now] = useState(() => new Date())
 
-  // Calendar navigation
-  const [viewYear, setViewYear] = useState(() => now.getUTCFullYear())
-  const [viewMonth, setViewMonth] = useState(() => now.getUTCMonth()) // 0-indexed
+  // Calendar navigation — use local time so month matches the user's clock
+  const [viewYear, setViewYear] = useState(() => now.getFullYear())
+  const [viewMonth, setViewMonth] = useState(() => now.getMonth()) // 0-indexed
 
   // Selected day filter (null = show all events of the month)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
 
   const grouped = groupByDate(items)
 
-  // Build the grid for the current month
-  const firstDay = new Date(Date.UTC(viewYear, viewMonth, 1))
-  const daysInMonth = new Date(Date.UTC(viewYear, viewMonth + 1, 0)).getUTCDate()
+  // Build the grid using local time so the grid aligns with the user's timezone
+  const firstDay = new Date(viewYear, viewMonth, 1)
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
   const startOffset = dayIndex(firstDay) // blanks before day 1
 
   const today = todayKey()
@@ -101,7 +103,7 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
     ? (grouped.get(selectedKey) ?? [])
     : items.filter(i => {
         const d = new Date(i.start_time)
-        return d.getUTCFullYear() === viewYear && d.getUTCMonth() === viewMonth
+        return d.getFullYear() === viewYear && d.getMonth() === viewMonth
       })
   )
     .filter(i => new Date(i.end_time) >= now)
