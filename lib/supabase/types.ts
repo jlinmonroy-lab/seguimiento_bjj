@@ -12,6 +12,8 @@ export interface Profile {
   belt_stripes: number
   admin_notes: string | null
   created_at: string
+  weight: number | null
+  category: string | null
 }
 
 export interface CalendarItem {
