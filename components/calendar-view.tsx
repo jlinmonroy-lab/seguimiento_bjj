@@ -318,7 +318,6 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
 // Color dot per event — gi_nogi takes priority over type when set
 function dotColor(type: string, giNogi?: string | null) {
   if (giNogi === 'nogi') return 'bg-pink-300'
-  if (giNogi === 'gi')   return 'bg-sky-400'
   switch (type) {
     case 'graduation':  return 'bg-amber-500'
     case 'seminar':     return 'bg-blue-500'
