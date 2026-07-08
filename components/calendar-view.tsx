@@ -290,7 +290,7 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
                               {EVENT_TYPE_LABELS[item.type]}
                             </Badge>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">
+                          <p className="text-xs text-muted-foreground mt-0.5" suppressHydrationWarning>
                             {formatTime(item.start_time)} – {formatTime(item.end_time)}
                             {item.location ? ` · ${item.location}` : ''}
                           </p>
