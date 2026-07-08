@@ -172,8 +172,8 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
             const isToday = key === today
             const isSelected = key === selectedKey
 
-            // Collect up to 3 distinct event type dots
-            const typeDots = [...new Set(dayItems.map(e => e.type))].slice(0, 3)
+            // Up to 3 dots — one per event, color driven by gi_nogi then type
+            const dotItems = dayItems.slice(0, 3)
 
             // Admins can click any day; non-admins can only click days with events
             const isClickable = hasEvents || isAdmin
@@ -206,12 +206,12 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
                 </span>
                 {/* Event dots */}
                 <div className="flex gap-0.5 mt-1.5 h-2">
-                  {typeDots.map(type => (
+                  {dotItems.map((item, idx) => (
                     <span
-                      key={type}
+                      key={idx}
                       className={cn(
                         'h-2 w-2 rounded-full',
-                        isSelected ? 'bg-background' : dotColor(type),
+                        isSelected ? 'bg-background' : dotColor(item.type, item.gi_nogi),
                       )}
                     />
                   ))}
@@ -315,8 +315,10 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
   )
 }
 
-// Color dot per event type (shown in calendar cells)
-function dotColor(type: string) {
+// Color dot per event — gi_nogi takes priority over type when set
+function dotColor(type: string, giNogi?: string | null) {
+  if (giNogi === 'nogi') return 'bg-pink-300'
+  if (giNogi === 'gi')   return 'bg-sky-400'
   switch (type) {
     case 'graduation':  return 'bg-amber-500'
     case 'seminar':     return 'bg-blue-500'
