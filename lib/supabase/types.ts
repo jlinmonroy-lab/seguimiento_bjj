@@ -1,6 +1,6 @@
 export type BeltColor = 'white' | 'blue' | 'purple' | 'brown' | 'black' | 'coral'
 export type UserRole = 'admin' | 'student'
-export type CalendarItemType = 'class' | 'graduation' | 'seminar' | 'competition'
+export type CalendarItemType = 'class' | 'graduation' | 'seminar' | 'competition' | 'open'
 export type AttendanceStatus = 'confirmed' | 'cancelled' | 'attended' | 'absent'
 
 export interface Profile {

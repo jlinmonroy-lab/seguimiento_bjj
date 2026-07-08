@@ -33,6 +33,7 @@ export const EVENT_TYPE_LABELS: Record<string, string> = {
   graduation: 'Graduación',
   seminar: 'Seminario',
   competition: 'Competición',
+  open: 'Open',
 }
 
 export const EVENT_TYPE_COLORS: Record<string, string> = {
@@ -40,6 +41,7 @@ export const EVENT_TYPE_COLORS: Record<string, string> = {
   graduation: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
   seminar: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
   competition: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+  open: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
 }
 
 export function formatTime(iso: string) {
