@@ -318,9 +318,10 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
 // Color dot per event type (shown in calendar cells)
 function dotColor(type: string) {
   switch (type) {
-    case 'graduation': return 'bg-amber-500'
-    case 'seminar':    return 'bg-blue-500'
+    case 'graduation':  return 'bg-amber-500'
+    case 'seminar':     return 'bg-blue-500'
     case 'competition': return 'bg-red-500'
+    case 'open':        return 'bg-emerald-500'
     default:            return 'bg-foreground'
   }
 }
@@ -328,9 +329,10 @@ function dotColor(type: string) {
 // Left accent bar color per event type (shown in event list)
 function accentBar(type: string) {
   switch (type) {
-    case 'graduation': return 'bg-amber-400'
-    case 'seminar':    return 'bg-blue-400'
+    case 'graduation':  return 'bg-amber-400'
+    case 'seminar':     return 'bg-blue-400'
     case 'competition': return 'bg-red-400'
+    case 'open':        return 'bg-emerald-400'
     default:            return 'bg-muted-foreground'
   }
 }
