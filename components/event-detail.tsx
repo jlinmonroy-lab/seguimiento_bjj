@@ -169,9 +169,12 @@ export function EventDetail({ event, profile, attendanceList, myAttendance, user
 
       {/* Admin event controls */}
       {isAdmin && (
-        <div className="mb-6 flex gap-2">
+        <div className="mb-6 flex gap-2 flex-wrap">
           <Button asChild size="sm" variant="outline">
             <Link href={`/dashboard/events/${event.id}/edit`}>Editar evento</Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link href="/dashboard/events/batch-edit">Edición por lote</Link>
           </Button>
         </div>
       )}
