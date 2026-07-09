@@ -60,6 +60,7 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
   const router = useRouter()
   const attendanceMap = new Map(myAttendance.map((a) => [a.calendar_item_id, a]))
   const [now] = useState(() => new Date())
+  const [showPast, setShowPast] = useState(false)
 
   // Calendar navigation — use local time so month matches the user's clock
   const [viewYear, setViewYear] = useState(() => now.getFullYear())
@@ -98,16 +99,26 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
     }
   }
 
-  // Events to show in the list below — always exclude past events
-  const listItems: CalendarItem[] = (selectedKey
+  // Events to show in the list below — exclude past events (admins can see them separately)
+  const monthItems = selectedKey
     ? (grouped.get(selectedKey) ?? [])
     : items.filter(i => {
         const d = new Date(i.start_time)
         return d.getFullYear() === viewYear && d.getMonth() === viewMonth
       })
-  )
-    .filter(i => new Date(i.end_time) >= now)
+
+  const listItems: CalendarItem[] = monthItems
+    // When a specific day is selected, show all its events (including past ones)
+    // When browsing the month, only show upcoming events
+    .filter(i => selectedKey ? true : new Date(i.end_time) >= now)
     .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+
+  // Past events for admin — all past events across all months, newest first
+  const pastItems: CalendarItem[] = isAdmin
+    ? items
+        .filter(i => new Date(i.end_time) < now)
+        .sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())
+    : []
 
   // Group list items by day for display
   const listGrouped = groupByDate(listItems)
@@ -309,6 +320,67 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Past events — admin only */}
+      {isAdmin && pastItems.length > 0 && (
+        <div className="mt-8">
+          <button
+            onClick={() => setShowPast(p => !p)}
+            className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors w-full"
+          >
+            <ChevronRight
+              size={16}
+              className={cn('transition-transform', showPast && 'rotate-90')}
+            />
+            Clases pasadas
+            <span className="ml-auto text-xs font-normal">{pastItems.length}</span>
+          </button>
+
+          {showPast && (
+            <div className="mt-3 space-y-2">
+              {pastItems.map(item => {
+                const attendance = attendanceMap.get(item.id)
+                return (
+                  <Link
+                    key={item.id}
+                    href={`/dashboard/events/${item.id}`}
+                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:bg-accent opacity-70"
+                  >
+                    <span className={cn('w-1 self-stretch rounded-full shrink-0', accentBar(item.type))} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-sm text-card-foreground truncate">
+                          {item.title}
+                        </span>
+                        <Badge className={cn('text-xs shrink-0 border-0', EVENT_TYPE_COLORS[item.type])}>
+                          {EVENT_TYPE_LABELS[item.type]}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5" suppressHydrationWarning>
+                        {(() => {
+                          const s = formatDate(localKey(item.start_time) + 'T00:00:00')
+                          return s.charAt(0).toUpperCase() + s.slice(1)
+                        })()}
+                        {' · '}
+                        {formatTime(item.start_time)} – {formatTime(item.end_time)}
+                      </p>
+                    </div>
+                    {/* Attendance summary */}
+                    <div className="shrink-0 text-right">
+                      <span className="text-xs text-muted-foreground">
+                        {attendance?.status === 'attended' ? (
+                          <span className="text-green-600 dark:text-green-400 font-medium">Asistido</span>
+                        ) : null}
+                      </span>
+                      <ChevronRight size={16} className="text-muted-foreground mt-0.5" />
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -271,9 +271,19 @@ export function EventForm({ userId, event, initialDate }: EventFormProps) {
         {isEdit ? 'Volver al evento' : 'Calendario'}
       </Link>
 
-      <h1 className="text-2xl font-bold tracking-tight text-foreground mb-6">
-        {isEdit ? 'Editar evento' : 'Nueva clase / evento'}
-      </h1>
+      <div className="flex items-start justify-between mb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          {isEdit ? 'Editar evento' : 'Nueva clase / evento'}
+        </h1>
+        {!isEdit && (
+          <Link
+            href="/dashboard/events/batch-edit"
+            className="shrink-0 text-xs text-muted-foreground hover:text-foreground transition-colors mt-1"
+          >
+            Editar por lote
+          </Link>
+        )}
+      </div>
 
       {/* Mode toggle — only in create mode */}
       {!isEdit && (
