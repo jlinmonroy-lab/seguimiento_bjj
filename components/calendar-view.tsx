@@ -108,7 +108,9 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
       })
 
   const listItems: CalendarItem[] = monthItems
-    .filter(i => new Date(i.end_time) >= now)
+    // When a specific day is selected, show all its events (including past ones)
+    // When browsing the month, only show upcoming events
+    .filter(i => selectedKey ? true : new Date(i.end_time) >= now)
     .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
 
   // Past events for admin — all past events across all months, newest first
