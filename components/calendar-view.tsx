@@ -112,6 +112,8 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
     // When browsing the month, only show upcoming events
     .filter(i => selectedKey ? true : new Date(i.end_time) >= now)
     .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+    // When browsing the month (no day selected), only show the next 3 upcoming classes
+    .slice(0, selectedKey ? undefined : 3)
 
   // Past events for admin — all past events across all months, newest first
   const pastItems: CalendarItem[] = isAdmin
