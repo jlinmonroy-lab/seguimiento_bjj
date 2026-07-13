@@ -429,7 +429,7 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
                     'text-sm font-semibold',
                     isToday ? 'text-foreground' : 'text-muted-foreground',
                   )}>
-                    {isToday ? 'Hoy' : (() => {
+                    {isToday ? 'Próximas clases' : (() => {
                       const s = formatDate(dateKey + 'T00:00:00Z')
                       return s.charAt(0).toUpperCase() + s.slice(1)
                     })()}
