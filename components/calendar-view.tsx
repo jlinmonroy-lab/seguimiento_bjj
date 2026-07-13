@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CalendarCheck } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -14,6 +14,7 @@ import {
   formatDate,
 } from '@/lib/belt'
 import type { CalendarItem, Profile, Attendance } from '@/lib/supabase/types'
+import { createClient } from '@/lib/supabase/client'
 
 interface CalendarViewProps {
   profile: Profile
@@ -55,12 +56,59 @@ function groupByDate(items: CalendarItem[]) {
   return map
 }
 
+const WEEKDAYS_ES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+
 export function CalendarView({ profile, items, myAttendance }: CalendarViewProps) {
   const isAdmin = profile?.role === 'admin'
   const router = useRouter()
   const attendanceMap = new Map(myAttendance.map((a) => [a.calendar_item_id, a]))
   const [now] = useState(() => new Date())
   const [showPast, setShowPast] = useState(false)
+
+  // Batch attendance state (students only)
+  const [showBatchPanel, setShowBatchPanel] = useState(false)
+  const [batchDays, setBatchDays] = useState<number[]>([]) // 0=Mon…6=Sun
+  const [batchYear, setBatchYear] = useState(() => now.getFullYear())
+  const [batchMonth, setBatchMonth] = useState(() => now.getMonth())
+  const [batchResult, setBatchResult] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
+
+  // Events the student could batch-confirm: upcoming, matching chosen days/month, not yet confirmed/attended
+  const batchCandidates = batchDays.length === 0 ? [] : items.filter(i => {
+    const d = new Date(i.start_time)
+    if (d < now) return false
+    if (d.getFullYear() !== batchYear || d.getMonth() !== batchMonth) return false
+    const dow = (d.getDay() + 6) % 7 // Mon=0
+    if (!batchDays.includes(dow)) return false
+    const att = attendanceMap.get(i.id)
+    return !att || (att.status !== 'confirmed' && att.status !== 'attended')
+  })
+
+  async function handleBatchConfirm() {
+    if (batchCandidates.length === 0) return
+    startTransition(async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const rows = batchCandidates.map(i => ({
+        calendar_item_id: i.id,
+        student_id: user.id,
+        status: 'confirmed' as const,
+      }))
+
+      const { error } = await supabase
+        .from('attendance')
+        .upsert(rows, { onConflict: 'calendar_item_id,student_id' })
+
+      if (error) {
+        setBatchResult(`Error: ${error.message}`)
+      } else {
+        setBatchResult(`Asistencia confirmada en ${rows.length} clase${rows.length !== 1 ? 's' : ''}.`)
+        router.refresh()
+      }
+    })
+  }
 
   // Calendar navigation — use local time so month matches the user's clock
   const [viewYear, setViewYear] = useState(() => now.getFullYear())
@@ -234,6 +282,116 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
           })}
         </div>
       </div>
+
+      {/* Batch attendance — students only */}
+      {!isAdmin && (
+        <div className="mb-5">
+          {!showBatchPanel ? (
+            <button
+              onClick={() => { setShowBatchPanel(true); setBatchResult(null) }}
+              className="flex items-center gap-2 w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground hover:bg-accent transition-colors"
+            >
+              <CalendarCheck size={16} className="text-muted-foreground" />
+              Confirmar asistencia por lote
+            </button>
+          ) : (
+            <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-foreground">Confirmar asistencia por lote</span>
+                <button
+                  onClick={() => { setShowBatchPanel(false); setBatchDays([]); setBatchResult(null) }}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+
+              {/* Day-of-week selector */}
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium text-muted-foreground">Días de la semana</p>
+                <div className="flex flex-wrap gap-2">
+                  {WEEKDAYS_ES.map((label, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setBatchDays(prev =>
+                        prev.includes(idx) ? prev.filter(d => d !== idx) : [...prev, idx]
+                      )}
+                      className={cn(
+                        'px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors',
+                        batchDays.includes(idx)
+                          ? 'bg-foreground text-background border-foreground'
+                          : 'bg-background text-foreground border-border hover:bg-accent',
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Month selector */}
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium text-muted-foreground">Mes</p>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      if (batchMonth === 0) { setBatchYear(y => y - 1); setBatchMonth(11) }
+                      else setBatchMonth(m => m - 1)
+                    }}
+                    className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-accent transition-colors"
+                  >
+                    <ChevronLeft size={15} className="text-muted-foreground" />
+                  </button>
+                  <span className="text-sm font-medium text-foreground min-w-[120px] text-center">
+                    {MONTHS_ES[batchMonth]} {batchYear}
+                  </span>
+                  <button
+                    onClick={() => {
+                      if (batchMonth === 11) { setBatchYear(y => y + 1); setBatchMonth(0) }
+                      else setBatchMonth(m => m + 1)
+                    }}
+                    className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-accent transition-colors"
+                  >
+                    <ChevronRight size={15} className="text-muted-foreground" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Preview */}
+              {batchDays.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {batchCandidates.length === 0
+                    ? 'No hay clases pendientes de confirmar para esos días.'
+                    : `Se confirmarán ${batchCandidates.length} clase${batchCandidates.length !== 1 ? 's' : ''}.`}
+                </p>
+              )}
+
+              {batchResult && (
+                <p className={cn(
+                  'text-xs font-medium',
+                  batchResult.startsWith('Error') ? 'text-destructive' : 'text-green-600 dark:text-green-400',
+                )}>
+                  {batchResult}
+                </p>
+              )}
+
+              <Button
+                onClick={handleBatchConfirm}
+                disabled={isPending || batchCandidates.length === 0}
+                size="sm"
+                className="w-full"
+              >
+                {isPending
+                  ? 'Confirmando...'
+                  : batchCandidates.length > 0
+                  ? `Confirmar ${batchCandidates.length} clase${batchCandidates.length !== 1 ? 's' : ''}`
+                  : 'Confirmar asistencia'}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Selected day label or month label */}
       {selectedKey && (
