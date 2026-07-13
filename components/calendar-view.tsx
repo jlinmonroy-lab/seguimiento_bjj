@@ -177,7 +177,7 @@ export function CalendarView({ profile, items, myAttendance }: CalendarViewProps
   return (
     <div className="max-w-lg mx-auto px-4 pt-6 pb-4">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mt-6 mb-5">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Calendario</h1>
         {isAdmin && (
           <Button asChild size="sm" variant="outline">
