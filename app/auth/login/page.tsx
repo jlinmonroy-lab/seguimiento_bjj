@@ -91,6 +91,15 @@ export default function LoginPage() {
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? 'Entrando...' : 'Iniciar sesión'}
           </Button>
+
+          <p className="text-center">
+            <Link
+              href="/auth/change-password"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4"
+            >
+              Cambiar contraseña
+            </Link>
+          </p>
         </form>
 
         <p className="text-center text-sm text-muted-foreground">
