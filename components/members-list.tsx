@@ -21,7 +21,7 @@ export function MembersList({ profiles, currentUserId, isAdmin }: MembersListPro
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground mb-6">Miembros</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-foreground mt-12 mb-6">Miembros</h1>
 
       <ul className="space-y-2">
         {sorted.map((member) => {
