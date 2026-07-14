@@ -5,11 +5,13 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { Eye, EyeOff } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -60,16 +62,26 @@ export default function LoginPage() {
             <label htmlFor="password" className="block text-sm font-medium text-foreground">
               Contraseña
             </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute inset-y-0 right-0 flex items-center justify-center px-3 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -79,6 +91,15 @@ export default function LoginPage() {
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? 'Entrando...' : 'Iniciar sesión'}
           </Button>
+
+          <p className="text-center">
+            <Link
+              href="/auth/change-password"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4"
+            >
+              Cambiar contraseña
+            </Link>
+          </p>
         </form>
 
         <p className="text-center text-sm text-muted-foreground">
