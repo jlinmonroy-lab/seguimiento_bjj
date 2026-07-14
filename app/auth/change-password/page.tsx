@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
@@ -17,6 +17,7 @@ export default function ChangePasswordPage() {
   const [emailError, setEmailError] = useState<string | null>(null)
 
   // Step 2 — set new password (reached after clicking the email link)
+  const [isRecoverySession, setIsRecoverySession] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showNew, setShowNew] = useState(false)
@@ -24,6 +25,17 @@ export default function ChangePasswordPage() {
   const [pwdError, setPwdError] = useState<string | null>(null)
   const [pwdSuccess, setPwdSuccess] = useState(false)
   const [pwdLoading, setPwdLoading] = useState(false)
+
+  // Detect when Supabase processes the recovery token from the email link
+  useEffect(() => {
+    const supabase = createClient()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecoverySession(true)
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
   async function handleRequestReset(e: React.FormEvent) {
     e.preventDefault()
@@ -68,12 +80,6 @@ export default function ChangePasswordPage() {
       setPwdLoading(false)
     }
   }
-
-  // Supabase redirects back here with type=recovery in the hash — detect active session
-  const isRecoverySession =
-    typeof window !== 'undefined' &&
-    (window.location.hash.includes('type=recovery') ||
-      window.location.hash.includes('access_token'))
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
