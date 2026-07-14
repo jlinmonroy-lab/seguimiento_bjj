@@ -9,46 +9,76 @@ import { Button } from '@/components/ui/button'
 
 export default function ChangePasswordPage() {
   const router = useRouter()
+
+  // Step 1 — request reset email
+  const [email, setEmail] = useState('')
+  const [emailSent, setEmailSent] = useState(false)
+  const [emailLoading, setEmailLoading] = useState(false)
+  const [emailError, setEmailError] = useState<string | null>(null)
+
+  // Step 2 — set new password (reached after clicking the email link)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showNew, setShowNew] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [pwdError, setPwdError] = useState<string | null>(null)
+  const [pwdSuccess, setPwdSuccess] = useState(false)
+  const [pwdLoading, setPwdLoading] = useState(false)
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleRequestReset(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
+    setEmailError(null)
+    setEmailLoading(true)
+    try {
+      const supabase = createClient()
+      const redirectTo = `${window.location.origin}/auth/change-password`
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+      if (error) throw error
+      setEmailSent(true)
+    } catch (err: unknown) {
+      setEmailError(err instanceof Error ? err.message : 'Error al enviar el correo.')
+    } finally {
+      setEmailLoading(false)
+    }
+  }
+
+  async function handleSetPassword(e: React.FormEvent) {
+    e.preventDefault()
+    setPwdError(null)
 
     if (newPassword.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres.')
+      setPwdError('La contraseña debe tener al menos 6 caracteres.')
       return
     }
     if (newPassword !== confirmPassword) {
-      setError('Las contraseñas no coinciden.')
+      setPwdError('Las contraseñas no coinciden.')
       return
     }
 
-    setLoading(true)
+    setPwdLoading(true)
     try {
       const supabase = createClient()
       const { error } = await supabase.auth.updateUser({ password: newPassword })
       if (error) throw error
-      setSuccess(true)
+      setPwdSuccess(true)
       setTimeout(() => router.push('/auth/login'), 2500)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error al cambiar la contraseña.')
+      setPwdError(err instanceof Error ? err.message : 'Error al cambiar la contraseña.')
     } finally {
-      setLoading(false)
+      setPwdLoading(false)
     }
   }
+
+  // Supabase redirects back here with type=recovery in the hash — detect active session
+  const isRecoverySession =
+    typeof window !== 'undefined' &&
+    (window.location.hash.includes('type=recovery') ||
+      window.location.hash.includes('access_token'))
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-8">
 
-        {/* Back link */}
         <Link
           href="/auth/login"
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -59,73 +89,113 @@ export default function ChangePasswordPage() {
 
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Cambiar contraseña</h1>
-          <p className="text-muted-foreground text-sm">Introduce tu nueva contraseña a continuación.</p>
+          <p className="text-sm text-muted-foreground">
+            {isRecoverySession
+              ? 'Introduce tu nueva contraseña a continuación.'
+              : 'Introduce tu correo y te enviaremos un enlace para cambiar la contraseña.'}
+          </p>
         </div>
 
-        {success ? (
-          <div className="rounded-xl border border-border bg-card p-5 text-center space-y-2">
-            <p className="text-sm font-medium text-foreground">Contraseña actualizada correctamente.</p>
-            <p className="text-xs text-muted-foreground">Redirigiendo al inicio de sesión...</p>
+        {/* ── Step 2: set new password (after clicking email link) ── */}
+        {isRecoverySession ? (
+          pwdSuccess ? (
+            <div className="rounded-xl border border-border bg-card p-5 text-center space-y-2">
+              <p className="text-sm font-medium text-foreground">Contraseña actualizada correctamente.</p>
+              <p className="text-xs text-muted-foreground">Redirigiendo al inicio de sesión...</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSetPassword} className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="new-password" className="block text-sm font-medium text-foreground">
+                  Nueva contraseña
+                </label>
+                <div className="relative">
+                  <input
+                    id="new-password"
+                    type={showNew ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    required
+                    minLength={6}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="Mínimo 6 caracteres"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNew(p => !p)}
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label={showNew ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  >
+                    {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="confirm-password" className="block text-sm font-medium text-foreground">
+                  Confirmar contraseña
+                </label>
+                <div className="relative">
+                  <input
+                    id="confirm-password"
+                    type={showConfirm ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="Repite la contraseña"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(p => !p)}
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label={showConfirm ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  >
+                    {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              {pwdError && <p className="text-sm text-destructive">{pwdError}</p>}
+
+              <Button type="submit" className="w-full" disabled={pwdLoading}>
+                {pwdLoading ? 'Actualizando...' : 'Actualizar contraseña'}
+              </Button>
+            </form>
+          )
+
+        /* ── Step 1: request reset email ── */
+        ) : emailSent ? (
+          <div className="rounded-xl border border-border bg-card p-5 space-y-2">
+            <p className="text-sm font-medium text-foreground">Correo enviado.</p>
+            <p className="text-xs text-muted-foreground">
+              Revisa tu bandeja de entrada en <span className="font-medium">{email}</span> y pulsa el enlace para continuar.
+            </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleRequestReset} className="space-y-4">
             <div className="space-y-2">
-              <label htmlFor="new-password" className="block text-sm font-medium text-foreground">
-                Nueva contraseña
+              <label htmlFor="email" className="block text-sm font-medium text-foreground">
+                Correo electrónico
               </label>
-              <div className="relative">
-                <input
-                  id="new-password"
-                  type={showNew ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  required
-                  minLength={6}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="Mínimo 6 caracteres"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNew(p => !p)}
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={showNew ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                >
-                  {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                placeholder="tu@correo.com"
+              />
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="confirm-password" className="block text-sm font-medium text-foreground">
-                Confirmar contraseña
-              </label>
-              <div className="relative">
-                <input
-                  id="confirm-password"
-                  type={showConfirm ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="Repite la contraseña"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirm(p => !p)}
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={showConfirm ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                >
-                  {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
+            {emailError && <p className="text-sm text-destructive">{emailError}</p>}
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Actualizando...' : 'Actualizar contraseña'}
+            <Button type="submit" className="w-full" disabled={emailLoading}>
+              {emailLoading ? 'Enviando...' : 'Enviar enlace de cambio'}
             </Button>
           </form>
         )}
