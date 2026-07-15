@@ -4,18 +4,26 @@ import type { EmailOtpType } from '@supabase/supabase-js'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
-  const token_hash = searchParams.get('token_hash')
+  const tokenHash = searchParams.get('token_hash')
   const type = searchParams.get('type') as EmailOtpType | null
-  const next = searchParams.get('next') ?? '/reset-password'
-
-  if (!token_hash || !type) {
-    return NextResponse.redirect(
-      `${origin}/auth/error?message=${encodeURIComponent('Enlace de recuperación inválido o incompleto.')}`,
-    )
-  }
+  const code = searchParams.get('code')
+  const requestedNext = searchParams.get('next') ?? '/reset-password'
+  const next = requestedNext.startsWith('/') && !requestedNext.startsWith('//')
+    ? requestedNext
+    : '/reset-password'
 
   const supabase = await createClient()
-  const { error } = await supabase.auth.verifyOtp({ type, token_hash })
+  let error: Error | null = null
+
+  if (code) {
+    const result = await supabase.auth.exchangeCodeForSession(code)
+    error = result.error
+  } else if (tokenHash && type) {
+    const result = await supabase.auth.verifyOtp({ type, token_hash: tokenHash })
+    error = result.error
+  } else {
+    error = new Error('Enlace de recuperación inválido o incompleto.')
+  }
 
   if (error) {
     return NextResponse.redirect(
