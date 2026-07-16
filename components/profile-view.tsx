@@ -357,12 +357,12 @@ export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileV
       {isOwnProfile && (
         <div className="mt-4">
           {!showPasswordPanel ? (
-            <button
-              onClick={() => { setShowPasswordPanel(true); setPasswordError(null); setPasswordSuccess(null) }}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors text-left"
+            <a
+              href="https://brazilian-jiu-jitsu-dojo-l4ohc5jqi-jlinmonroy-7836s-projects.vercel.app/reset-password"
+              className="block w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors text-left"
             >
               Cambiar contraseña
-            </button>
+            </a>
           ) : (
             <form onSubmit={handlePasswordChange} className="rounded-xl border border-border bg-card p-4 space-y-4">
               <div className="flex items-center justify-between">
