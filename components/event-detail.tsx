@@ -36,7 +36,8 @@ export function EventDetail({ event, profile, attendanceList, myAttendance, user
   const isAdmin = profile?.role === 'admin'
   const isPast = new Date(event.end_time) < new Date()
 
-  const confirmed = attendanceList.filter((a) => ['confirmed', 'attended'].includes(a.status))
+  // Keep absent students visible so marking non-attendance does not look like deletion.
+  const signedUp = attendanceList.filter((a) => a.status !== 'cancelled')
 
   async function handleAttendance(action: 'confirm' | 'cancel') {
     setError(null)
@@ -185,19 +186,19 @@ export function EventDetail({ event, profile, attendanceList, myAttendance, user
       <div className="space-y-3">
         <div className="flex items-baseline gap-2">
           <h2 className="text-sm font-semibold text-foreground">
-            Asistentes confirmados
+            Alumnos apuntados
           </h2>
           <span className="text-xs text-muted-foreground">
-            {confirmed.length}
+            {signedUp.length}
           </span>
         </div>
 
-        {confirmed.length === 0 && (
-          <p className="text-sm text-muted-foreground">Nadie ha confirmado todavía.</p>
+        {signedUp.length === 0 && (
+          <p className="text-sm text-muted-foreground">Nadie se ha apuntado todavía.</p>
         )}
 
         <ul className="space-y-2">
-          {confirmed.map((a) => {
+          {signedUp.map((a) => {
             const p = a.profiles
             const profileHref = a.student_id === userId
               ? '/dashboard/profile'

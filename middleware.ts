@@ -1,7 +1,14 @@
-import { type NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/proxy'
 
 export async function middleware(request: NextRequest) {
+  // The password-reset form is public. The recovery link establishes its
+  // temporary session before redirecting here, so this route must never be
+  // intercepted by the regular authentication guard.
+  if (request.nextUrl.pathname.startsWith('/reset-password')) {
+    return NextResponse.next()
+  }
+
   return await updateSession(request)
 }
 

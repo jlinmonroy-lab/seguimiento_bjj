@@ -18,6 +18,10 @@ interface ProfileViewProps {
   userId: string
   isOwnProfile: boolean
   isAdmin: boolean
+  attendanceStats?: {
+    attended: number
+    absent: number
+  }
 }
 
 const BELT_OPTIONS: BeltColor[] = ['white', 'blue', 'purple', 'brown', 'black', 'coral']
@@ -35,7 +39,7 @@ const CATEGORY_OPTIONS = [
   { value: 'master_7', label: 'Máster 7 (61+ años)' },
 ]
 
-export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileViewProps) {
+export function ProfileView({ profile, userId, isOwnProfile, isAdmin, attendanceStats }: ProfileViewProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [isUploading, setIsUploading] = useState(false)
@@ -227,6 +231,25 @@ export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileV
 
       <Separator className="mb-6" />
 
+      {/* Verified attendance statistics — visible only to admins on student profiles */}
+      {isAdmin && profile.role === 'student' && attendanceStats && (
+        <section className="mb-6" aria-labelledby="attendance-summary-title">
+          <h2 id="attendance-summary-title" className="mb-3 text-sm font-semibold text-foreground">
+            Registro de asistencia
+          </h2>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-border bg-card p-4">
+              <p className="text-2xl font-bold text-foreground">{attendanceStats.attended}</p>
+              <p className="mt-1 text-sm text-muted-foreground">Asistencias</p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <p className="text-2xl font-bold text-foreground">{attendanceStats.absent}</p>
+              <p className="mt-1 text-sm text-muted-foreground">Ausencias</p>
+            </div>
+          </div>
+        </section>
+      )}
+
       <form onSubmit={handleSave} className="space-y-5">
         <div className="space-y-1.5">
           <label className="text-sm font-medium text-foreground" htmlFor="name">
@@ -357,12 +380,12 @@ export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileV
       {isOwnProfile && (
         <div className="mt-4">
           {!showPasswordPanel ? (
-            <button
-              onClick={() => { setShowPasswordPanel(true); setPasswordError(null); setPasswordSuccess(null) }}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors text-left"
+            <a
+              href="/reset-password"
+              className="block w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors text-left"
             >
               Cambiar contraseña
-            </button>
+            </a>
           ) : (
             <form onSubmit={handlePasswordChange} className="rounded-xl border border-border bg-card p-4 space-y-4">
               <div className="flex items-center justify-between">

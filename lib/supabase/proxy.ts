@@ -32,9 +32,16 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
+  // Public routes that must never be blocked regardless of auth state
+  const isPublicAuthRoute =
+    pathname.startsWith('/auth/confirm') ||
+    pathname.startsWith('/auth/error') ||
+    pathname === '/reset-password'
+
   // Redirect unauthenticated users away from protected routes
   if (
     !user &&
+    !isPublicAuthRoute &&
     !pathname.startsWith('/auth') &&
     pathname !== '/'
   ) {
@@ -44,7 +51,8 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Redirect authenticated users away from auth pages
-  if (user && pathname.startsWith('/auth')) {
+  // but NOT from confirm, error, or reset-password — these need to stay accessible
+  if (user && pathname.startsWith('/auth') && !isPublicAuthRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
