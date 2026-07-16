@@ -358,7 +358,7 @@ export function ProfileView({ profile, userId, isOwnProfile, isAdmin }: ProfileV
         <div className="mt-4">
           {!showPasswordPanel ? (
             <a
-              href="https://brazilian-jiu-jitsu-dojo-l4ohc5jqi-jlinmonroy-7836s-projects.vercel.app/reset-password"
+              href="/reset-password"
               className="block w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors text-left"
             >
               Cambiar contraseña
