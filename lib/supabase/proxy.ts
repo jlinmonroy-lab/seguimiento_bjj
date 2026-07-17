@@ -36,6 +36,7 @@ export async function updateSession(request: NextRequest) {
   const isPublicAuthRoute =
     pathname.startsWith('/auth/confirm') ||
     pathname.startsWith('/auth/error') ||
+    pathname === '/change-password' ||
     pathname === '/reset-password'
 
   // Redirect unauthenticated users away from protected routes

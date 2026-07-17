@@ -16,7 +16,7 @@ export default async function AuthErrorPage({
         </p>
         <div className="flex flex-col gap-2 items-center">
           <Link
-            href="/auth/change-password"
+            href="/change-password"
             className="inline-block text-sm font-medium underline underline-offset-4 text-foreground hover:opacity-80 transition-opacity"
           >
             Solicitar un nuevo enlace
