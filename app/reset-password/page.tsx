@@ -37,21 +37,46 @@ export default function ResetPasswordPage() {
     let active = true
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!active) return
-      if (event === 'PASSWORD_RECOVERY' || session) {
+      if (event === 'PASSWORD_RECOVERY' || (hashParams.get('type') === 'recovery' && session)) {
         setIsRecoveryReady(true)
         setCheckingLink(false)
       }
     })
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    async function initializeRecoverySession() {
+      const accessToken = hashParams.get('access_token')
+      const refreshToken = hashParams.get('refresh_token')
+      const isRecoveryLink = hashParams.get('type') === 'recovery'
+
+      if (isRecoveryLink && accessToken && refreshToken) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        })
+
+        if (!active) return
+        if (sessionError) {
+          setLinkError('El enlace de recuperación no es válido o ha caducado.')
+        } else {
+          setIsRecoveryReady(true)
+          // Remove recovery credentials from the visible URL once consumed.
+          window.history.replaceState(null, '', window.location.pathname)
+        }
+        setCheckingLink(false)
+        return
+      }
+
+      const { data: { session } } = await supabase.auth.getSession()
       if (!active) return
-      if (session) {
+      if (session && isRecoveryLink) {
         setIsRecoveryReady(true)
-      } else if (!window.location.hash.includes('access_token')) {
+      } else {
         setLinkError('El enlace de recuperación no es válido o ha caducado.')
       }
       setCheckingLink(false)
-    })
+    }
+
+    void initializeRecoverySession()
 
     return () => {
       active = false
