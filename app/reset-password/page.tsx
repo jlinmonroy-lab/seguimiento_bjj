@@ -114,7 +114,7 @@ export default function ResetPasswordPage() {
               <p className="text-sm text-muted-foreground">{linkError}</p>
             </div>
             <Link
-              href="/auth/change-password"
+              href="/change-password"
               className="inline-flex h-9 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               Solicitar un enlace nuevo

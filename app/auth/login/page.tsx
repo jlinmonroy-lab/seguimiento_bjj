@@ -111,7 +111,7 @@ export default function LoginPage() {
 
           <p className="text-center">
             <Link
-              href="/auth/change-password"
+              href="/change-password"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4"
             >
               Cambiar contraseña

@@ -381,7 +381,7 @@ export function ProfileView({ profile, userId, isOwnProfile, isAdmin, attendance
         <div className="mt-4">
           {!showPasswordPanel ? (
             <a
-              href="/reset-password"
+              href="/change-password"
               className="block w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors text-left"
             >
               Cambiar contraseña
