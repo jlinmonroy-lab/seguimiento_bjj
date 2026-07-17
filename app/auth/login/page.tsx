@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -14,6 +14,23 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const search = window.location.search
+    const hash = window.location.hash
+    const params = new URLSearchParams(search)
+    const hashParams = new URLSearchParams(hash.replace(/^#/, ''))
+    const isRecoveryCallback =
+      params.get('type') === 'recovery' ||
+      hashParams.get('type') === 'recovery' ||
+      hashParams.has('access_token') ||
+      params.has('error_code') ||
+      hashParams.has('error_code')
+
+    if (isRecoveryCallback) {
+      window.location.replace(`/reset-password${search}${hash}`)
+    }
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

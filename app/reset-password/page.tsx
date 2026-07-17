@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff } from 'lucide-react'
@@ -14,13 +14,59 @@ export default function ResetPasswordPage() {
   const [showNew, setShowNew] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [linkError, setLinkError] = useState<string | null>(null)
+  const [isRecoveryReady, setIsRecoveryReady] = useState(false)
+  const [checkingLink, setCheckingLink] = useState(true)
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const supabase = createClient()
+    const searchParams = new URLSearchParams(window.location.search)
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+    const recoveryError =
+      searchParams.get('error_description') ??
+      hashParams.get('error_description')
+
+    if (recoveryError) {
+      setLinkError(decodeURIComponent(recoveryError.replace(/\+/g, ' ')))
+      setCheckingLink(false)
+      return
+    }
+
+    let active = true
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!active) return
+      if (event === 'PASSWORD_RECOVERY' || session) {
+        setIsRecoveryReady(true)
+        setCheckingLink(false)
+      }
+    })
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!active) return
+      if (session) {
+        setIsRecoveryReady(true)
+      } else if (!window.location.hash.includes('access_token')) {
+        setLinkError('El enlace de recuperación no es válido o ha caducado.')
+      }
+      setCheckingLink(false)
+    })
+
+    return () => {
+      active = false
+      subscription.unsubscribe()
+    }
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
 
+    if (!isRecoveryReady) {
+      setError('Abre un enlace de recuperación válido antes de cambiar la contraseña.')
+      return
+    }
     if (newPassword.length < 8) {
       setError('La contraseña debe tener al menos 8 caracteres.')
       return
@@ -57,7 +103,21 @@ export default function ResetPasswordPage() {
           </p>
         </div>
 
-        {success ? (
+        {checkingLink ? (
+          <div className="rounded-xl border border-border bg-card p-6 text-center">
+            <p className="text-sm text-muted-foreground">Validando enlace...</p>
+          </div>
+        ) : linkError ? (
+          <div className="rounded-xl border border-border bg-card p-6 text-center space-y-4">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-foreground">El enlace no es válido</p>
+              <p className="text-sm text-muted-foreground">{linkError}</p>
+            </div>
+            <Button asChild className="w-full">
+              <Link href="/auth/change-password">Solicitar un enlace nuevo</Link>
+            </Button>
+          </div>
+        ) : success ? (
           <div className="rounded-xl border border-border bg-card p-6 text-center space-y-2">
             <p className="text-sm font-medium text-foreground">Contraseña actualizada correctamente.</p>
             <p className="text-xs text-muted-foreground">Redirigiendo al inicio de sesión...</p>
@@ -76,6 +136,7 @@ export default function ResetPasswordPage() {
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
                   minLength={8}
+                  autoComplete="new-password"
                   className="w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   placeholder="Mínimo 8 caracteres"
                 />
@@ -101,6 +162,7 @@ export default function ResetPasswordPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
+                  autoComplete="new-password"
                   className="w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   placeholder="Repite la contraseña"
                 />
@@ -117,7 +179,7 @@ export default function ResetPasswordPage() {
 
             {error && <p className="text-sm text-destructive">{error}</p>}
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={loading || !isRecoveryReady}>
               {loading ? 'Actualizando...' : 'Actualizar contraseña'}
             </Button>
 
