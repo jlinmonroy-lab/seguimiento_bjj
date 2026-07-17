@@ -113,9 +113,12 @@ export default function ResetPasswordPage() {
               <p className="text-sm font-medium text-foreground">El enlace no es válido</p>
               <p className="text-sm text-muted-foreground">{linkError}</p>
             </div>
-            <Button asChild className="w-full">
-              <Link href="/auth/change-password">Solicitar un enlace nuevo</Link>
-            </Button>
+            <Link
+              href="/auth/change-password"
+              className="inline-flex h-9 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Solicitar un enlace nuevo
+            </Link>
           </div>
         ) : success ? (
           <div className="rounded-xl border border-border bg-card p-6 text-center space-y-2">
