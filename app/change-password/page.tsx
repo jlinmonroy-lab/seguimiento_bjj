@@ -19,7 +19,11 @@ export default function ChangePasswordPage() {
 
     try {
       const supabase = createClient()
-      const redirectTo = `${window.location.origin}/reset-password`
+      // Password recovery emails must always return to the stable production
+      // domain. Using window.location.origin here would make preview deployments
+      // generate links that stop working once that preview is replaced.
+      const productionUrl = 'https://brazilian-jiu-jitsu-dojo-app.vercel.app'
+      const redirectTo = `${productionUrl}/reset-password`
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo,
       })
